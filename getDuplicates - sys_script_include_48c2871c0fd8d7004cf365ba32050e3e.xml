@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2018-02-15 13:04:33">
+<sys_script_include action="INSERT_OR_UPDATE">
+<access>public</access>
+<active>true</active>
+<api_name>global.getDuplicates</api_name>
+<client_callable>true</client_callable>
+<description>Functionality where you specify a table and a column. it then returns an array of all values that appear more than x amount of times.</description>
+<name>getDuplicates</name>
+<script><![CDATA[/**
+ * Searches the table and value and returns array of which values appear more than @amount of times.
+ *
+ * @param {string} tablename - Which table to conduct the search in.
+ * @param {string} val - Which column(field) to search within the table.
+ * @param {int} amount - The number of how times a value should max appears before being put on the list 
+ * @return {array} array of which values appear more than @amount of times.
+ */
+function getDuplicates(tablename,val, amount) {
+	var dupRecords = [];
+	var gaDupCheck = new GlideAggregate(tablename);
+	gaDupCheck.addQuery('active','true');
+	gaDupCheck.addAggregate('COUNT',val);
+	gaDupCheck.addNotNullQuery(val);
+	gaDupCheck.groupBy(val);
+	gaDupCheck.addHaving('COUNT', '>', amount);
+	gaDupCheck.query();
+	while (gaDupCheck.next()) {
+		dupRecords.push(gaDupCheck[val].toString());
+	}
+	return dupRecords;
+}]]></script>
+<sys_class_name>sys_script_include</sys_class_name>
+<sys_created_by>admin</sys_created_by>
+<sys_created_on>2018-02-11 17:30:03</sys_created_on>
+<sys_id>48c2871c0fd8d7004cf365ba32050e3e</sys_id>
+<sys_mod_count>4</sys_mod_count>
+<sys_name>getDuplicates</sys_name>
+<sys_package display_value="Global" source="global">global</sys_package>
+<sys_policy/>
+<sys_scope display_value="Global">global</sys_scope>
+<sys_update_name>sys_script_include_48c2871c0fd8d7004cf365ba32050e3e</sys_update_name>
+<sys_updated_by>admin</sys_updated_by>
+<sys_updated_on>2018-02-11 17:37:24</sys_updated_on>
+</sys_script_include>
+</unload>
