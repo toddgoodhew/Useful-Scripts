@@ -1,0 +1,30 @@
+Conditional Coalescing
+
+This allows for the coalescing on an "OR" basis.
+
+*** IMPORTANT ***
+For this to work, the sys_id of the matching record is returned.  This means the sys_id field needs to be added to the transform map and set to coalesce.  All other coalesce fields must be set to false or they will be part of the "AND" statement...meaning the sys_ID AND the other fields must match in order for a record to be updated.
+
+### Field Settings ###
+Target Field = Sys ID
+Use source script = true
+Coalesce = true
+
+--- Source Script ---
+
+answer = (function transformEntry(source) {
+
+	var gr = new GlideRecord('u_ad_sites');
+	// query for the objectGUID or the site name
+	gr.addQuery('u_objectguid', source.u_objectguid).addOrCondition('u_name', source.u_name);
+	gr.query();
+
+	if(gr.next()) {
+		answer = gr.sys_id; //if a match exists, return the sys_id of the matching record
+	} else {
+		answer= -1;
+	}
+
+	return answer; // return the value to be put into the target field
+
+})(source);

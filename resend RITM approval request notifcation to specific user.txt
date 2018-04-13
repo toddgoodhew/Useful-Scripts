@@ -1,0 +1,15 @@
+// script to resend approval notifications for request item to a specific user
+
+var grApproval = new GlideRecord("sysapproval_approver");
+grApproval.addQuery('state', 'requested');
+grApproval.addQuery('approver', '5df42feb4fea8200937601b28110c7ab');  //sys_id of approver
+grApproval.addQuery('source_table', 'sc_req_item');  // careful on this one...sometimes the approver begin added has no value for the source table even when it should be sc_req_item
+grApproval.orderBy("sys_created_on");
+grApproval.query();
+while (grApproval.next()) {
+	gs.print (grApproval.sysapproval.getDisplayValue() + " " + grApproval.state + " " + grApproval.approver.getDisplayValue() + " (" + grApproval.approver + ") " + grApproval.sys_created_on);
+	//gs.eventQueue("approval.inserted", grApproval);
+}
+
+
+

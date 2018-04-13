@@ -1,0 +1,32 @@
+function onChange(control, oldValue, newValue, isLoading) {
+   if (isLoading || newValue == '') {
+      return;
+   }
+
+	g_form.hideFieldMsg('u_alternate_phone');
+	
+	
+	var phoneNumber = newValue + ''; // or current.getValue('phone') if in a server script
+	var digitOnlyRE = /\D/g;
+	var phoneNumberClean = phoneNumber.replace(digitOnlyRE, ''); // strip non-digit characters
+	var badNumber = false;
+
+	// strip leading 1 if it exists
+	if (phoneNumberClean.length == 11 && phoneNumberClean[0] == '1'){
+		phoneNumberClean = phoneNumberClean.substring(1);
+	} else if (phoneNumberClean.length == 11 && phoneNumberClean[0] != '1'){
+		badNumber = true;
+	} else if (phoneNumberClean.length <10 || phoneNumberClean.length > 11) {
+		badNumber = true;
+	}
+	
+	if (badNumber == false){
+		// put into final format
+		var phoneNumberFormatted = "(" + phoneNumberClean.substring(0,3) + ") " + phoneNumberClean.substring(3,6) + "-" + phoneNumberClean.substring(6);
+		g_form.setValue("u_alternate_phone",phoneNumberFormatted);	
+		g_form.addInfoMessage("updated phone: " + phoneNumberFormatted);
+	} else {
+		g_form.showFieldMsg('u_alternate_phone','Phone enter a 10 digit phone number','error');
+	}
+
+}

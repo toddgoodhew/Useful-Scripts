@@ -1,0 +1,67 @@
+(function runMailScript(/* GlideRecord */ current, /* TemplatePrinter */ template,
+          /* Optional EmailOutbound */ email, /* Optional GlideRecord */ email_action,
+          /* Optional GlideRecord */ event) {
+
+//This script is used by different notifications that are on different tables.  The below code was modified to 
+//make it independant of the table.	
+//	var item = new GlideRecord("sc_req_item");
+//	item.get(current.sysapproval);
+	var SysID;
+
+	
+	if (current.sysapproval.isValidRecord()) {
+//	   item.get(current.sysapproval);
+	   SysID = current.sysaproval.sys_id;
+//	   template.print('sysapproval:' + current.sysapproval.sys_id);
+	}
+	else if (current.isValidRecord()) {
+		SysID = current.sys_id;
+//		template.print('current:' + current.sys_id);
+	}
+	else {
+		template.print('Value not found');
+	}
+		
+	
+	var keys = [];
+	var set = new GlideappVariablePoolQuestionSet();
+//	set.setRequestID(item.sys_id);
+	set.setRequestID(SysID);
+	set.load();
+	var vs = set.getFlatQuestions();
+
+	var varLSCBankErr, varLSCCustCurt, varLSCReqType, varLSCCustcurtres;
+	
+	for (var i=0; i < vs.size(); i++) {
+		if (JSUtil.notNil(vs.get(i).getName())) {		
+			if(!check(vs.get(i).getName())){
+				switch(String(vs.get(i).getName())){  //Convert the Name to a string so it can be compared correctly
+					case 'LSCBankErr':
+						varLSCBankErr = i;
+						break;
+					case 'LSCCustCurt':
+						varLSCCustCurt = i;
+						break;
+					case 'LSCReqType':
+						varLSCReqType = i;
+						break;
+					case 'LSCCustcurtres':
+						varLSCCustcurtres = i;
+						break;
+				}
+					
+			}
+		}			
+	}
+
+	if(vs.get(varLSCBankErr).getDisplayValue() == "true"){
+		template.print(vs.get(varLSCBankErr).getLabel().replace('?','') + ' - ' + vs.get(varLSCReqType).getDisplayValue());
+	}
+	else if(vs.get(varLSCCustCurt).getDisplayValue() == "true"){
+		template.print(vs.get(varLSCCustCurt).getLabel().replace('?','') + ' - ' + vs.get(varLSCReqType).getDisplayValue() + '<div><br /><strong>Reason:</strong><br />' + vs.get(varLSCCustcurtres).getDisplayValue() + '</div>');
+	}
+	else {
+		//do nothing
+	}
+
+})(current, template, email, email_action, event);

@@ -1,0 +1,36 @@
+
+***  Purpose  ***
+Auto de-activate and group membership removal for orphaned AD accounts that have not been updated from AD in more than 30 days.
+Run as a scheduled job.  Adapt the encoded query in the script as needed.
+We run it every hour, but could be set to less often based on need.
+
+Original  Source:
+https://community.servicenow.com/community?id=community_question&sys_id=4efb8325db9cdbc01dcaf3231f96198c
+
+
+**************  Business Rule **********************
+disable_users();
+
+function disable_users() {
+	/*
+	* query for active users with ldap source and last updated more than 30 days ago
+	* disable them
+	*/
+
+	var gr = new GlideRecord("sys_user");
+	gr.addEncodedQuery("u_last_refreshed<javascript:gs.daysAgoStart(30)^active=true^sourceISNOTEMPTY");
+	gr.query();
+	while (gr.next()) {
+		var gr2 = new GlideRecord('sys_user_grmember');
+		gr2.addQuery('user', gr.sys_id);
+		gr.query();
+		while(gr2.next()){
+			gr2.setWorkflow(false);
+			gr2.deleteRecord();
+		}
+		gr.active = false;
+		gs.log("Disabled inactive user: " + gr.user_name + " - last updated: " + gr.u_last_refreshed);
+		gr.update();
+		}
+	gs.log("Completed disabling inactive accounts");
+}

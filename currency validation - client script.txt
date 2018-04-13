@@ -1,0 +1,39 @@
+	var LossAmnt = newValue;
+	var error = false;
+	var DecSplit = LossAmnt.split('.');
+	
+	if (DecSplit[DecSplit.length-1].length != 2 || isNaN(DecSplit[DecSplit.length-1])) {
+		if (isNaN(DecSplit[1]) || DecSplit[1] == '') {
+			//error out
+			error = true;
+		}
+	}
+	
+	var CommaSplit = DecSplit[0].split(',');
+console.log('CommaSplit: Length=' + CommaSplit.length + '; Values=' + CommaSplit);
+	
+	if (CommaSplit.length == 1) {
+		if (isNaN(CommaSplit[0])) {
+			//error out
+			error = true;
+		} 
+	} else {
+		if (isNaN(CommaSplit[0])) {
+			//error out
+			error = true;
+		} else {
+			for (i=1; i < CommaSplit.length-1; i++ ) {
+	console.log("CommaSplit " + i + ":  Length=" + CommaSplit[i].length + "; Value=" + CommaSplit[i]);
+	
+				if (isNaN(CommaSplit[i]) || CommaSplit[i].length != 3) {
+					//error out
+					error = true;
+				}
+			}
+		}
+	}
+	
+if (error == true) {
+	g_form.showFieldMsg('FraudLossAmnt','Invalid amount. Please enter in the form of 1000.00','error');
+	return;
+}

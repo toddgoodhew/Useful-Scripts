@@ -1,0 +1,72 @@
+(function runMailScript(/* GlideRecord */ current, /* TemplatePrinter */ template,
+          /* Optional EmailOutbound */ email, /* Optional GlideRecord */ email_action,
+          /* Optional GlideRecord */ event) {
+	
+	template.print('<p>Please review the following fee waiver request. Click the appropriate buttons to send an approval or rejection.</p>');
+	var refNumber = '';
+	var emailUser = gs.getProperty('glide.email.user');
+	var gr = new GlideRecord('sys_watermark');  
+	gr.addQuery('source_id', current.sys_id);  
+	gr.query();  
+	while(gr.next()) {  
+		refNumber = (gr.number).toString();
+	}
+	
+	var item = new GlideRecord("sc_req_item");
+	item.get(current.sysapproval);
+	
+	var keys = [];
+	var set = new GlideappVariablePoolQuestionSet();
+	set.setRequestID(item.sys_id);
+	set.load();
+	var vs = set.getFlatQuestions();
+
+	function check(arg){
+		if(arg == "Applications"){
+			return true;
+		}
+		if(arg == "Roles"){
+			return true;
+		}
+		if(arg == "Templates"){
+			return true;
+		}
+		return false;
+	}
+	template.print('<table cellspacing="0" cellpadding="3" border="1">');
+
+	for (var i=0; i < vs.size(); i++) {
+		if (JSUtil.notNil(vs.get(i).getLabel())) {		
+			if(!check(vs.get(i).getLabel())){
+				if((vs.get(i).getLabel() == "Customer Name:")||
+				   (vs.get(i).getLabel() == "Branch Number:")||
+				   (vs.get(i).getLabel() == "Loan Type:")||
+				   (vs.get(i).getLabel() == "Loan Number:")||
+				   (vs.get(i).getLabel() == "Bank Error?")||
+				   (vs.get(i).getLabel() == "Customer Courtesy?")||
+				   (vs.get(i).getLabel() == "Waiver Amount?")){
+					if((vs.get(i).getLabel() == "Bank Error?") && (vs.get(i).getDisplayValue() == "true")){
+					  template.print('<tr><td width="130" style="font-weight:bold">Waiver Type:</td><td width="300">' + vs.get(i).getLabel().replace('?','') + '</td></tr>');
+					}
+					else if((vs.get(i).getLabel() == "Customer Courtesy?") && (vs.get(i).getDisplayValue() == "true")){
+					  template.print('<tr><td width="130" style="font-weight:bold">Waiver Type:</td><td width="300">' + vs.get(i).getLabel().replace('?','') + '</td></tr>');
+					}
+					else if(vs.get(i).getLabel() == "Waiver Amount?"){
+					  template.print('<tr><td width="130" style="font-weight:bold">Waiver Amount:</td><td width="300">$' + vs.get(i).getDisplayValue() + '</td></tr>');
+					}
+					else if(!((vs.get(i).getLabel() == "Customer Courtesy?") || (vs.get(i).getLabel() == "Bank Error?"))){
+					  template.print('<tr><td width="130" style="font-weight:bold">' + vs.get(i).getLabel().replace('?',':') + '</td><td width="300">' + vs.get(i).getDisplayValue() + '</td></tr>');
+					}
+				}
+			}			
+		}
+	}
+	template.print('</table>');
+//	var baseLink = gs.getProperty('glide.servlet.uri') + 'nav_to.do?uri=' + current.getTableName() + '.do?sys_id=' + current.getValue('sys_id') + '%26sysparm_input=';
+//	var appMailTo = 'mailto:'+emailUser+'?subject=Re%3ARITM0015000%20-%20approve&body=%0A%0ARef%3AMSG"+refNumber+"%20';
+//	var rejMailTo = 'mailto:'+emailUser+'?subject=Re%3ARITM0015000%20-%20reject&body=%0A%0ARef%3AMSG"+refNumber+"%20';
+//	var approvalLink = baseLink + 'approved';
+//	var rejectLink = baseLink + 'rejected';
+	var answer = '<table><tr><td><p>&nbsp;</p></td></tr><tr><td bgcolor="#a0c237" style="width:80px; padding: 12px 10px 12px 10px;" align="center"><a href="mailto:'+emailUser+'?subject=Re%3A${sysapproval}%20-%20approve&body=%0A%0A'+email.watermark+'" style="font-size: 16px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #ffffff; text-decoration: none; display: inline-block;">Approve</a></td><td>&nbsp;&nbsp;<td><td bgcolor="#cb413f" style="width:80px;padding: 12px 18px 12px 18px;" align="center"><a href="mailto:'+emailUser+'?subject=Re%3A${sysapproval}%20-%20reject&body=%0A%0A'+email.watermark+'" style="font-size: 16px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #ffffff; text-decoration: none; display: inline-block;">Reject</a></td></tr></table>';
+	template.print(answer);
+})(current, template, email, email_action, event);

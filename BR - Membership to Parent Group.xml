@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2017-12-03 03:55:22">
+<sys_script action="INSERT_OR_UPDATE">
+<abort_action>false</abort_action>
+<access>package_private</access>
+<action_delete>false</action_delete>
+<action_insert>true</action_insert>
+<action_query>false</action_query>
+<action_update>true</action_update>
+<active>true</active>
+<add_message>false</add_message>
+<advanced>true</advanced>
+<change_fields>false</change_fields>
+<client_callable>false</client_callable>
+<collection>sys_user_group</collection>
+<condition/>
+<description/>
+<execute_function>false</execute_function>
+<filter_condition table="sys_user_group">parentVALCHANGES^EQ<item goto="false" or="false" field="parent" endquery="false" value="" operator="VALCHANGES" newquery="false"/>
+<item goto="false" or="false" field="" endquery="true" value="" operator="=" newquery="false"/>
+</filter_condition>
+<is_rest>false</is_rest>
+<message/>
+<name>Membership to Parent Group [MB]</name>
+<order>101</order>
+<priority>100</priority>
+<rest_method display_value=""/>
+<rest_method_text/>
+<rest_service display_value=""/>
+<rest_service_text/>
+<rest_variables/>
+<role_conditions/>
+<script><![CDATA[(function executeRule(current, previous /*null when async*/) {
+	
+	// Remove parent memebership
+	if(!previous.parent.nil()) {
+		var cmem1 = new GlideRecord("sys_user_grmember");
+		cmem1.addQuery("group", current.sys_id);
+		cmem1.query();
+		while (cmem1.next()) {
+			var gmem = new GlideRecord("sys_user_grmember");
+			gmem.addQuery("user", cmem1.user);
+			gmem.addQuery("group", "!=", current.sys_id);
+			gmem.addQuery("group.parent", previous.parent);
+			gmem.query();
+			if(!gmem.next()) {
+				var pmem = new GlideRecord("sys_user_grmember");
+				pmem.addQuery("user", cmem1.user);
+				pmem.addQuery("group", previous.parent);
+				pmem.query();
+				if (pmem.next()) {
+					pmem.deleteRecord();
+				}
+			}
+		}
+	}
+	
+	//Add Parent Memebership
+	if(!current.parent.nil()) {
+		var newPGroup = current.parent;
+		var cGroup = current.sys_id;
+		var cmem2 = new GlideRecord("sys_user_grmember");
+		cmem2.addQuery("group", cGroup);
+		cmem2.query();
+		while (cmem2.next()) {
+			var pmem2 = new GlideRecord("sys_user_grmember");
+			pmem2.addQuery("user", cmem2.user);
+			pmem2.addQuery("group", newPGroup);
+			pmem2.query();
+			if (pmem2.next()) {
+				//Do Nothing
+			}
+			else {
+				var nmem = new GlideRecord("sys_user_grmember");
+				nmem.initialize();
+				nmem.user = cmem2.user;
+				nmem.group = newPGroup;
+				nmem.insert();
+			}
+		}
+	}	
+})(current, previous);]]></script>
+<sys_class_name>sys_script</sys_class_name>
+<sys_created_by>v-NAkella</sys_created_by>
+<sys_created_on>2017-11-30 14:21:57</sys_created_on>
+<sys_domain>global</sys_domain>
+<sys_domain_path>/</sys_domain_path>
+<sys_id>c5abd630db3207406ae63caf9d961985</sys_id>
+<sys_mod_count>5</sys_mod_count>
+<sys_name>Membership to Parent Group [MB]</sys_name>
+<sys_overrides display_value=""/>
+<sys_package display_value="Global" source="global">global</sys_package>
+<sys_policy/>
+<sys_scope display_value="Global">global</sys_scope>
+<sys_update_name>sys_script_c5abd630db3207406ae63caf9d961985</sys_update_name>
+<sys_updated_by>v-NAkella</sys_updated_by>
+<sys_updated_on>2017-11-30 14:54:18</sys_updated_on>
+<template/>
+<when>before</when>
+</sys_script>
+</unload>
