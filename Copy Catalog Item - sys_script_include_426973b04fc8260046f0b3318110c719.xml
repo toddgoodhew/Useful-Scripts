@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2019-04-01 17:42:54">
+<sys_script_include action="INSERT_OR_UPDATE">
+<access>package_private</access>
+<active>true</active>
+<api_name>global.CWTCopyCatalogItem</api_name>
+<client_callable>true</client_callable>
+<description>  </description>
+<name>CWTCopyCatalogItem</name>
+<script><![CDATA[var CWTCopyCatalogItem = Class.create();
+CWTCopyCatalogItem.prototype = Object.extendsObject(AbstractAjaxProcessor, {	
+	copy_item : function(){
+		// Get variables from client call
+		var catalogitem_sys_id = this.getParameter('sysparm_sys_id');
+		var application_name = this.getParameter('sysparm_application_name');
+		
+		// Returned answer
+		var answer = '';
+		
+		if (this.record_exists('sc_cat_item', 'name=' + application_name + ' Access') == false) {
+			// Get the original Catalog Item as a glide object
+			var grOriginalCatItem = new GlideRecord('sc_cat_item');
+			grOriginalCatItem.get(catalogitem_sys_id);
+			
+			// Using out-of-box API to copy Catalog Item
+			var glideHelper =  new GlideappScriptHelper();
+			glideHelper.copyItem(grOriginalCatItem);   
+
+			/* Get the newly created Catalog Item as a glide object. 
+			*** The OOB API does not return a sys_id, and does not allow naming at time of creating. Copied Catalog Items 
+			are all named 'Copy of XYZ'. XYZ = Name of orginal Catalog Item. Record will need to be queried and updated. */
+			var grNewCatItem = new GlideRecord('sc_cat_item');
+			grNewCatItem.addEncodedQuery('name=Copy of ' + grOriginalCatItem.name + '^sys_created_onRELATIVEGE@minute@ago@1');
+			grNewCatItem.setLimit(1);
+			grNewCatItem.query();
+
+			// Create a new CI in the CMDB with the name provided.
+			var grCMDBApp = new GlideRecord('cmdb_ci_web_application');
+			grCMDBApp.name = application_name;
+			newCMDBApp = grCMDBApp.insert();
+			
+			// Update the Catalog Item to add pre-defined values and to link to CMDB.
+			while (grNewCatItem.next()){
+				grNewCatItem.name = application_name + ' Access';
+				grNewCatItem.short_description = application_name + ' Application Access';
+				grNewCatItem.description = 'This form allows for the addition of individual access to the ' + application_name + ' application.';
+				grNewCatItem.active = false
+				grNewCatItem.u_configuration_item = newCMDBApp;
+				grNewCatItem.update();
+				
+				var grIAMApp = new GlideRecord('u_access_attributes');
+				grIAMApp.addEncodedQuery('u_cat_item=' + grNewCatItem.sys_id)
+				grIAMApp.setLimit(1);
+				grIAMApp.query();
+				
+				while (grIAMApp.next()) {
+					grIAMApp.u_name = application_name;
+					grIAMApp.u_ci = newCMDBApp;
+					grIAMApp.update();			
+				}
+				
+				// Return a message to the user with a link to the new Catalog Item.
+				//url = 'https://' + gs.getProperty('instance_name') + '.service-now.com/sc_cat_item.do?sys_id=' + grNewCatItem.sys_id;
+				//gs.addInfoMessage(application_name + ' Access has been created. Click <a href="' + url + '">here</a> to view the new Catalog Item.');
+				answer = grNewCatItem.sys_id;		
+			}
+		} else {
+			gs.addInfoMessage(application_name + ' Access already exists in the Catalog');
+		}
+		return answer;
+	},
+	
+	publish_to_order_guide : function(){		
+		// Create Run Base Rule for Order Guide
+		var variable_question_sys_id = this.getParameter('sysparm_variable_question_id');
+		var catalogitem_sys_id = this.getParameter('sysparm_catalog_item');
+		var order_guide_sys_id = this.getParameter('sysparm_order_guide');
+
+		// Returned answer
+		var answer = '';
+		
+		var grIAMApp = new GlideRecord('u_access_attributes');
+		grIAMApp.addEncodedQuery('u_cat_item=' + catalogitem_sys_id)
+		grIAMApp.setLimit(1);
+		grIAMApp.query();
+	
+		while (grIAMApp.next()) {
+			record_exists = this.record_exists('sc_cat_item_guide_items', 'condition=IO:' + variable_question_sys_id + 'LIKE' + grIAMApp.sys_id);
+			
+			if (record_exists == false) {
+				var grOrderGuideRule = new GlideRecord('sc_cat_item_guide_items');
+				grOrderGuideRule.guide = order_guide_sys_id;
+				grOrderGuideRule.condition = 'IO:' + variable_question_sys_id + 'LIKE' + grIAMApp.sys_id;
+				grOrderGuideRule.item = catalogitem_sys_id;
+				grOrderGuideRule.use_sc_layout = true;
+				grOrderGuideRule.order = 0;
+				grOrderGuideRuleSysID = grOrderGuideRule.insert();
+				
+				var grCatalogItem = new GlideRecord('sc_cat_item');
+				grCatalogItem.get(catalogitem_sys_id);
+				grCatalogItem.active = true;
+				grCatalogItem.update();
+				
+				//url = 'https://' + gs.getProperty('instance_name') + '.service-now.com/sc_cat_item_guide_items.do?sys_id=' + grOrderGuideRuleSysID;
+				//gs.addInfoMessage('A Run Base rule for ' + grIAMApp.u_name + ' has been created. Click <a href="' + url + '">here</a> to view the new rule.');
+				answer = catalogitem_sys_id;
+			} else {
+				gs.addInfoMessage('This item already exists in the Order Guide.');
+			}
+		}			
+		return answer;
+	},
+	
+	record_exists : function(table, query) {
+		var answer = false;
+		if (table && query) {
+			var grRecord = new GlideRecord(table);
+			grRecord.addEncodedQuery(query);
+			grRecord.query();
+			
+			if (grRecord.hasNext()){
+				answer = true;
+			}
+		}
+		return answer;
+	},
+	
+    type: 'CWTCopyCatalogItem'
+});]]></script>
+<sys_class_name>sys_script_include</sys_class_name>
+<sys_created_by>nmartinez</sys_created_by>
+<sys_created_on>2016-06-14 11:56:56</sys_created_on>
+<sys_customer_update>false</sys_customer_update>
+<sys_id>426973b04fc8260046f0b3318110c719</sys_id>
+<sys_mod_count>14</sys_mod_count>
+<sys_name>CWTCopyCatalogItem</sys_name>
+<sys_package display_value="Global" source="global">global</sys_package>
+<sys_policy/>
+<sys_replace_on_upgrade>false</sys_replace_on_upgrade>
+<sys_scope display_value="Global">global</sys_scope>
+<sys_update_name>sys_script_include_426973b04fc8260046f0b3318110c719</sys_update_name>
+<sys_updated_by>nmartinez</sys_updated_by>
+<sys_updated_on>2016-06-16 15:09:07</sys_updated_on>
+</sys_script_include>
+</unload>
