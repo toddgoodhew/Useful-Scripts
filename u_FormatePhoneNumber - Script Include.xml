@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2019-04-02 13:13:18">
+<sys_script_include action="INSERT_OR_UPDATE">
+<access>package_private</access>
+<active>true</active>
+<api_name>global.u_FormatPhoneNumber</api_name>
+<client_callable>true</client_callable>
+<description>Include script to check the validity of a phone number against the North American Number Number Plan.
+Accepted values are in this format:
+
+* Area codes start with a number 2–9, followed by 0–8, and then any third digit.
+* The second group of three digits, known as the central office or exchange code, starts with a number 2–9, followed by any two digits.
+* The final four digits, known as the station code, have no restrictions.
+
+A leading 1 is option for input, but will be set on output. this is to facilitate the ServiceNow column type of Phone Number E164.
+It will accept hyphens, periods, and spaces as group separators.  E.g. 1-248-555-1212 or 1.248.555.1212. or 1 248 555 1212 or any combo there in.
+It will accept no separators too:  E.g. 12485551212 or any combo there in (1248 555.1212)</description>
+<name>u_FormatPhoneNumber</name>
+<script><![CDATA[var u_FormatPhoneNumber = Class.create();
+u_FormatPhoneNumber.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+
+	formatPhoneNumber:function(){
+		var phoneNumber = this.getParameter('sysparm_phone_number') + '';
+		var finalFormat = "1 ($1) $2-$3";
+		// Valid numbers in position according to NANP
+		var allowedFormat= /^(?:\+?1[-. ]?)?\(?([2-9][0-8][0-9])\)?[-. ]?([2-9][0-9]{2})[-. ]?([0-9]{4})$/;
+		// final format:  1 (234) 567-8900
+		var finalFormatTest= /^(1[ ])\(([2-9][0-8][0-9])\)[ ]([2-9][0-9]{2})[-]([0-9]{4})$/;
+		var phoneNumberFormatted;
+
+		// if the phone number is already in the final format, then exit the script and do not return a value.
+		// this helps stop the infinite loop for the On Change in the client script.
+		if (finalFormatTest.test(phoneNumber)) {
+			return;
+		}
+
+		// if the phone number is not in the final format, then validate it is a valid number and format it.
+		if (allowedFormat.test(phoneNumber)) {
+			phoneNumberFormatted = phoneNumber.replace(allowedFormat, finalFormat);
+		} else {
+			// if the phone number is not valid, then post a message to the user.
+			//gs.addErrorMessage('Enter a valid 10 digit phone number');
+			phoneNumberFormatted = 'Error';
+		}
+		
+		return phoneNumberFormatted;
+	},
+		
+
+	type: 'u_FormatPhoneNumber'
+});]]></script>
+<sys_class_name>sys_script_include</sys_class_name>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2018-04-02 13:05:07</sys_created_on>
+<sys_customer_update>false</sys_customer_update>
+<sys_id>d4546314dbd11bc021542dba0b9619ae</sys_id>
+<sys_mod_count>14</sys_mod_count>
+<sys_name>u_FormatPhoneNumber</sys_name>
+<sys_package display_value="Global" source="global">global</sys_package>
+<sys_policy/>
+<sys_replace_on_upgrade>false</sys_replace_on_upgrade>
+<sys_scope display_value="Global">global</sys_scope>
+<sys_update_name>sys_script_include_d4546314dbd11bc021542dba0b9619ae</sys_update_name>
+<sys_updated_by>tgoodhew</sys_updated_by>
+<sys_updated_on>2018-04-26 17:05:20</sys_updated_on>
+</sys_script_include>
+</unload>

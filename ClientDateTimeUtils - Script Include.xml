@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2019-04-02 13:14:19">
+<sys_script_include action="INSERT_OR_UPDATE">
+<access>package_private</access>
+<active>true</active>
+<api_name>global.ClientDateTimeUtils</api_name>
+<client_callable>true</client_callable>
+<description/>
+<name>ClientDateTimeUtils</name>
+<script><![CDATA[var ClientDateTimeUtils = Class.create();
+ClientDateTimeUtils.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+	
+	
+	
+	//Takes a Single Date/Time Field and returns its time difference from nowDateTime().
+	//params = sysparm_fdt (the first date/time field), sysparm_difftype (time based format to return result. See "_calcDateDiff" function comments)
+	getNowDateTimeDiff: function(){
+		var firstDT = this.getParameter('sysparm_fdt'); //First Date-Time Field
+		var diffTYPE = this.getParameter('sysparm_difftype'); // Date-Time Type to return the answer as. Can be second, minute, hour, day
+		var diff = gs.dateDiff(gs.nowDateTime(), firstDT, true);
+		var timediff = this._calcDateDiff(diffTYPE, diff);
+		//return "getNowDateTimeDiff: FIRST DT: " + firstDT + " -DIFFTYPE: " + diffTYPE + " -TIME DIFF: " + timediff;
+		return timediff;
+	},
+	
+	//Takes a Single Date Field and returns its date difference from GlideDate.
+	//params = sysparm_fdate (the first date field), sysparm_difftype (time based format to return result. See "_calcDateDiff" function comments)
+	getNowDateDiff: function(){
+		var firstDT = this.getParameter('sysparm_fdate'); //First Date Field
+		var diffTYPE = this.getParameter('sysparm_difftype'); // Date-Time Type to return the answer as. Can be second, minute, hour, day
+		var userDate = new GlideDateTime();
+		userDate.setDisplayValue(firstDT + " 00:00:00");
+		var today = new GlideDateTime();
+		today.setDisplayValue(today.getDate() + " 00:00:00");
+		
+		var date_diff = gs.dateDiff(today, userDate,true); 
+		var diff = this._calcDateDiff(diffTYPE, date_diff);
+
+		//return "getNowDateDiff: FIRST DT: " + firstDT + " userDate: " + userDate + " today: " + today + " date_diff: " + date_diff + " DIFF: " + diff;
+		return diff;
+	},
+	
+	// Calculates a future date based on a start date and a number of days to add
+	getFutureDate:function(){
+		var start_date = this.getParameter('sysparm_start_date') + '';
+		var daysToAdd = this.getParameter('sysparm_days_to_add') + '';
+		var format = this.getParameter('sysparm_date_format') + '';		
+		var gdt = new GlideDateTime(start_date);
+		gdt.addDaysUTC(daysToAdd);
+		var future_date = gdt.getDate().getByFormat(format);
+		
+		return future_date;
+	},
+	
+		// Calculates a future date based on a start date and the value of a system property.
+	getFutureDateByProp:function(){
+		var start_date = this.getParameter('sysparm_start_date') + '';
+		var sysProp = this.getParameter('sysparm_sys_prop') + '';
+		var format = this.getParameter('sysparm_date_format') + '';
+		var daysToAdd = gs.getProperty(sysProp);
+		var gdt = new GlideDateTime(start_date);
+		gdt.addDaysUTC(daysToAdd);
+		var future_date = gdt.getDate().getByFormat(format);
+		
+		return future_date;
+	},
+	
+	// Converts a GlideDateTime value to a GlideDate value
+	convertToGlideDate:function(){
+		var glideDateTime = this.getParameter('sysparm_glideDateTime') + '';
+		var format = this.getParameter('sysparm_date_format') + '';
+		var gdt = new GlideDateTime(glideDateTime);
+		var glideDate = gdt.getDate().getByFormat(format);
+		
+		return glideDate;
+	},
+
+	//Takes a Single Date Field and returns -1 if in the past, 0 for today, 1 for the future.
+	//params = sysparm_date (the date field)
+	isDateBeforeToday: function(){
+		var firstDT = this.getParameter('sysparm_date'); //First Date-Time Field
+		var gDateTime = new GlideDateTime(firstDT);
+		var today = new GlideDateTime();
+		var todayDate = today.getDate();
+		var reqDate = gDateTime.getDate();
+		
+		diff = reqDate.compareTo(todayDate);
+		
+		//return "getNowDateDiff: firstDT: " + firstDT + " gDateTime: " + gDateTime + " Today: " + today +  " DIFF: " + diff;
+		return diff;
+	},
+	
+	
+	//Private function to calculate the date difference return result in second, minute, hour, day.
+	_calcDateDiff: function(diffTYPE, seconds){
+		var thisdiff;
+		if (diffTYPE == "day"){thisdiff = seconds/86400;}
+			else if (diffTYPE == "hour"){thisdiff = seconds/3600;}
+				else if (diffTYPE == "minute"){thisdiff = seconds/60;}
+					else if (diffTYPE == "second"){thisdiff = seconds;}
+						else {thisdiff = seconds;}
+							return thisdiff;
+						}
+						
+						
+					});]]></script>
+<sys_class_name>sys_script_include</sys_class_name>
+<sys_created_by>eric.ward@crossfuze.com</sys_created_by>
+<sys_created_on>2018-05-30 16:54:33</sys_created_on>
+<sys_customer_update>false</sys_customer_update>
+<sys_id>55d58bcfdb52970021542dba0b96191c</sys_id>
+<sys_mod_count>100</sys_mod_count>
+<sys_name>ClientDateTimeUtils</sys_name>
+<sys_package display_value="Global" source="global">global</sys_package>
+<sys_policy/>
+<sys_replace_on_upgrade>false</sys_replace_on_upgrade>
+<sys_scope display_value="Global">global</sys_scope>
+<sys_update_name>sys_script_include_55d58bcfdb52970021542dba0b96191c</sys_update_name>
+<sys_updated_by>tgoodhew</sys_updated_by>
+<sys_updated_on>2018-12-14 14:33:14</sys_updated_on>
+</sys_script_include>
+</unload>
