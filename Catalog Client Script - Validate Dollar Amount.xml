@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2019-04-04 15:31:22">
+<catalog_script_client action="INSERT_OR_UPDATE">
+<active>true</active>
+<applies_catalog>true</applies_catalog>
+<applies_extended>false</applies_extended>
+<applies_req_item>true</applies_req_item>
+<applies_sc_task>true</applies_sc_task>
+<applies_target_record>false</applies_target_record>
+<applies_to>item</applies_to>
+<cat_item display_value="Ewire Access">b7e9cb211b28bfc00e580fa2cd4bcbd8</cat_item>
+<cat_variable>IO:08c5f9a21bac73040e580fa2cd4bcb91</cat_variable>
+<condition/>
+<description/>
+<field/>
+<global>true</global>
+<isolate_script>true</isolate_script>
+<messages/>
+<name>Wire Approval Amount - OnChange</name>
+<order>100</order>
+<script><![CDATA[function onChange(control, oldValue, newValue, isLoading) {
+   if (isLoading || newValue == '') {
+      return;
+   }
+
+	g_form.hideFieldMsg('wire_approval_amount',true);
+	
+	var currencyRegEx = /^[0-9]+\.[0-9]{2}$/;
+
+ 	if(!currencyRegEx.test(newValue)){
+ 		g_form.showFieldMsg('wire_approval_amount','Invalid amount. Please enter in the form of 1000.00, without commas','error');
+ 		return;
+ 	} else {
+ 		// do nothing
+ 	}
+
+	
+	
+// 	if (newValue <= 1000.00) {
+// 		g_form.showFieldMsg('wire_approval_amount','Loss must be more than $1000.00.','error');
+// 	}
+   
+}]]></script>
+<sys_class_name>catalog_script_client</sys_class_name>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-04-04 14:29:47</sys_created_on>
+<sys_customer_update>false</sys_customer_update>
+<sys_domain>global</sys_domain>
+<sys_domain_path>/</sys_domain_path>
+<sys_id>017839a61bac73040e580fa2cd4bcb61</sys_id>
+<sys_mod_count>1</sys_mod_count>
+<sys_name>Wire Approval Amount - OnChange</sys_name>
+<sys_overrides display_value=""/>
+<sys_package display_value="Global" source="global">global</sys_package>
+<sys_policy/>
+<sys_replace_on_upgrade>false</sys_replace_on_upgrade>
+<sys_scope display_value="Global">global</sys_scope>
+<sys_update_name>catalog_script_client_017839a61bac73040e580fa2cd4bcb61</sys_update_name>
+<sys_updated_by>tgoodhew</sys_updated_by>
+<sys_updated_on>2019-04-04 14:32:12</sys_updated_on>
+<table/>
+<type>onChange</type>
+<ui_type>10</ui_type>
+<variable_set display_value=""/>
+<view/>
+</catalog_script_client>
+</unload>

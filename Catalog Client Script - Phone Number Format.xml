@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2019-04-04 15:32:08">
+<catalog_script_client action="INSERT_OR_UPDATE">
+<active>true</active>
+<applies_catalog>true</applies_catalog>
+<applies_extended>false</applies_extended>
+<applies_req_item>false</applies_req_item>
+<applies_sc_task>false</applies_sc_task>
+<applies_target_record>false</applies_target_record>
+<applies_to>item</applies_to>
+<cat_item display_value="Ewire Access">b7e9cb211b28bfc00e580fa2cd4bcbd8</cat_item>
+<cat_variable>IO:843e63244fd38a0046f0b3318110c7f2</cat_variable>
+<condition/>
+<description> Re-usable code to check the validity of a phone number against the North American Number Plan.  Call the script include and pass it the value of the field that needs to be validated.  The script include will validate and format as necessary.  If the returned answer has no value, then don't update the field on the form...this stops the infinite loop.
+
+ Details:
+ *  Area codes start with a number 2–9, followed by 0–8, and then any third digit.
+ * The second group of three digits, known as the central office or exchange code, starts with a number // 2–9, followed by any two digits.
+ * The final four digits, known as the station code, have no restrictions.
+
+* A leading 1 is option for input, but will be set on output. this is to facilitate the ServiceNow column type of Phone Number E164.
+   * Enforces 10 or 11 digits.  If leading 1, then 11 digit required.
+* It will accept hyphens, periods, and spaces as group separators.  E.g. 1-248-555-1212 or 1.248.555.1212. or 1 248 555 1212 or any combo there in.
+* It will accept  no separators too:  E.g. 12485551212 or any combo there in (1248 555.1212)</description>
+<field/>
+<global>true</global>
+<isolate_script>true</isolate_script>
+<messages/>
+<name>Phone Number Format</name>
+<order>100</order>
+<script><![CDATA[function onChange(control, oldValue, newValue, isLoading) {
+   if ((isLoading || newValue == '') )   {
+      return;
+   }
+
+	// set the name of the variable that contains the phone number.  Rest of code below does not need changes.
+	var variableName = 'app_acc_req4_contact';
+	
+	// clear all messages from the phone number field.
+	g_form.hideFieldMsg(variableName,true); 
+	
+	//force the the newValue to a javascript string type.  this avoids an ambigous string type used in the RegEx in the script include
+	var rawPhoneNumber = g_form.getValue(variableName).toString();
+	// call the script include and pass it the raw phone number.
+	var ga = new GlideAjax('u_FormatPhoneNumber');
+	ga.addParam('sysparm_name','formatPhoneNumber');
+	ga.addParam('sysparm_phone_number',rawPhoneNumber);
+	ga.getXML(callbackfunction); // call back function so we don't lock up the client waiting for the return trip from the server.
+	
+	function callbackfunction(response){
+		var answer = response.responseXML.documentElement.getAttribute("answer");
+		// if we get an answer, then it means the include script formatted the phone value, so lets set it int the field.
+		// otherwise do nothing...do not update the field.
+		if (answer) {
+			if (answer != 'Error') {
+				g_form.setValue(variableName,answer);
+				return;
+			} else {
+				g_form.showFieldMsg(variableName,'Enter a valid 10 digit phone number','error');
+			}
+		}
+	}
+
+}]]></script>
+<sys_class_name>catalog_script_client</sys_class_name>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-04-01 17:51:52</sys_created_on>
+<sys_customer_update>false</sys_customer_update>
+<sys_domain>global</sys_domain>
+<sys_domain_path>/</sys_domain_path>
+<sys_id>c0f9c7a11b28bfc00e580fa2cd4bcbee</sys_id>
+<sys_mod_count>0</sys_mod_count>
+<sys_name>Phone Number Format</sys_name>
+<sys_overrides display_value=""/>
+<sys_package display_value="Global" source="global">global</sys_package>
+<sys_policy/>
+<sys_replace_on_upgrade>false</sys_replace_on_upgrade>
+<sys_scope display_value="Global">global</sys_scope>
+<sys_update_name>catalog_script_client_c0f9c7a11b28bfc00e580fa2cd4bcbee</sys_update_name>
+<sys_updated_by>tgoodhew</sys_updated_by>
+<sys_updated_on>2019-04-01 17:51:52</sys_updated_on>
+<table/>
+<type>onChange</type>
+<ui_type>10</ui_type>
+<variable_set display_value=""/>
+<view/>
+</catalog_script_client>
+</unload>
