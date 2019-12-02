@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2019-12-02 20:45:15">
+<sys_script_fix action="INSERT_OR_UPDATE">
+<active>true</active>
+<before>false</before>
+<description>Converts a JSON object to an XML document</description>
+<flush_cache>false</flush_cache>
+<name>JSON to XML</name>
+<record_for_rollback>false</record_for_rollback>
+<run_once>true</run_once>
+<script><![CDATA[// setup the JSON
+var jsonString = {
+  "user" : {
+	  "firstName": "John",
+	  "lastName": "Smith",
+	  "isAlive": true,
+	  "age": 27,
+	  "address": {
+		"streetAddress": "21 2nd Street",
+		"city": "New York",
+		"state": "NY",
+		"postalCode": "10021-3100"
+	  },
+	  "phoneNumbers": [
+		{
+		  "type": "home",
+		  "number": "212 555-1234"
+		},
+		{
+		  "type": "office",
+		  "number": "646 555-4567"
+		},
+		{
+		  "type": "mobile",
+		  "number": "123 456-7890"
+		}
+	  ],
+	  "children": [],
+	  "spouse": null
+  }
+};
+
+
+// ***** convert JSON to XML doc *****
+// NOTE: as of 12/2/2019 this does not seem to work.  It returns Null.
+//       it first calls .toXMLStr which does work, then it calls GlideXMLUtil.parse.  this seems to be the
+//       point of failure.
+//       To get around this, see the next section down.
+var doc = new XMLHelper().toXMLDoc(jsonString);
+
+
+//***** convert the JSON to an XML sring *****
+// NOTE:  Since we can't seem to create an XML doc directly, we'll first convert the JSON to an XML String,
+//        then convert that to an XML doc.
+var str = new XMLHelper().toXMLStr(jsonString);
+gs.info('str: \n' + str);
+
+// convert the XML string to an XML doc
+var xmlDoc = new XMLDocument2();
+xmlDoc.parseXML(str);
+
+
+// ***** attach the XML to the record *****
+// sys id of record to associate the attachment with
+var recSysID = 'b9c9dea6db110010b914e9c9489619c4';
+var recTable = 'sys_script_fix';
+
+// query the attachment table for existing attachments for the above record. allows us to increment the file name.
+var grAttach = new GlideRecord('sys_attachment');
+grAttach.addEncodedQuery('table_nameSTARTSWITH' + recTable + '^file_nameLIKETestXMLDoc^table_sys_idSTARTSWITH' + recSysID);
+grAttach.query();
+gs.info(("grAttach = " + grAttach.getRowCount()));
+
+var number = 1;
+if (grAttach.hasNext()){
+	number = grAttach.getRowCount() + 1;
+}
+gs.info('number=' + number);
+
+// attach the XML doc to the record
+var current = new GlideRecord(recTable);
+current.get(recSysID);
+var gsa = new GlideSysAttachment();
+var att_sys_id = gsa.write(current, 'TestXMLDoc -' + number + '.xml', 'text/xml', xmlDoc);
+gs.info('**SAN** TestXMLDoc: att_sys_id: ' + att_sys_id);
+
+
+//JSUtil.logObject(jsonString);
+
+
+]]></script>
+<sys_class_name>sys_script_fix</sys_class_name>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-11-26 19:54:02</sys_created_on>
+<sys_id>b9c9dea6db110010b914e9c9489619c4</sys_id>
+<sys_mod_count>66</sys_mod_count>
+<sys_name>JSON to XML</sys_name>
+<sys_package display_value="Global" source="global">global</sys_package>
+<sys_policy/>
+<sys_scope display_value="Global">global</sys_scope>
+<sys_update_name>sys_script_fix_b9c9dea6db110010b914e9c9489619c4</sys_update_name>
+<sys_updated_by>tgoodhew</sys_updated_by>
+<sys_updated_on>2019-12-02 20:05:06</sys_updated_on>
+<unloadable>false</unloadable>
+</sys_script_fix>
+<sys_attachment action="INSERT_OR_UPDATE">
+<average_image_color/>
+<chunk_size_bytes>734003</chunk_size_bytes>
+<compressed>true</compressed>
+<content_type>text/xml</content_type>
+<encryption_context display_value=""/>
+<file_name>TestXMLDoc -1.xml</file_name>
+<image_height/>
+<image_width/>
+<size_bytes>17</size_bytes>
+<size_compressed>37</size_compressed>
+<state>available</state>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 19:21:22</sys_created_on>
+<sys_id>ffeb4928dbe10010b914e9c948961972</sys_id>
+<sys_mod_count>1</sys_mod_count>
+<sys_updated_by>system</sys_updated_by>
+<sys_updated_on>2019-12-02 19:21:30</sys_updated_on>
+<table_name>sys_script_fix</table_name>
+<table_sys_id>b9c9dea6db110010b914e9c9489619c4</table_sys_id>
+</sys_attachment>
+<sys_attachment_doc action="INSERT_OR_UPDATE">
+<data>H4sIAAAAAAAAAA==</data>
+<length>16</length>
+<position>0</position>
+<sys_attachment display_value="TestXMLDoc -1.xml" sys_id="ffeb4928dbe10010b914e9c948961972">ffeb4928dbe10010b914e9c948961972</sys_attachment>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 19:21:22</sys_created_on>
+<sys_id>33eb4928dbe10010b914e9c948961973</sys_id>
+</sys_attachment_doc>
+<sys_attachment_doc action="INSERT_OR_UPDATE">
+<data>i1ZOyU8uzU3NK7FSyCvNyYkFANMBaOkRAAAA</data>
+<length>36</length>
+<position>1</position>
+<sys_attachment display_value="TestXMLDoc -1.xml" sys_id="ffeb4928dbe10010b914e9c948961972">ffeb4928dbe10010b914e9c948961972</sys_attachment>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 19:21:22</sys_created_on>
+<sys_id>b3eb4928dbe10010b914e9c948961973</sys_id>
+</sys_attachment_doc>
+<sys_attachment action="INSERT_OR_UPDATE">
+<average_image_color/>
+<chunk_size_bytes>734003</chunk_size_bytes>
+<compressed>true</compressed>
+<content_type>text/xml</content_type>
+<encryption_context display_value=""/>
+<file_name>TestXMLDoc -2.xml</file_name>
+<image_height/>
+<image_width/>
+<size_bytes>514</size_bytes>
+<size_compressed>282</size_compressed>
+<state>available</state>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 19:28:09</sys_created_on>
+<sys_id>9b7d4dacdbe10010b914e9c9489619a4</sys_id>
+<sys_mod_count>1</sys_mod_count>
+<sys_updated_by>system</sys_updated_by>
+<sys_updated_on>2019-12-02 19:28:13</sys_updated_on>
+<table_name>sys_script_fix</table_name>
+<table_sys_id>b9c9dea6db110010b914e9c9489619c4</table_sys_id>
+</sys_attachment>
+<sys_attachment_doc action="INSERT_OR_UPDATE">
+<data>H4sIAAAAAAAAAA==</data>
+<length>16</length>
+<position>0</position>
+<sys_attachment display_value="TestXMLDoc -2.xml" sys_id="9b7d4dacdbe10010b914e9c9489619a4">9b7d4dacdbe10010b914e9c9489619a4</sys_attachment>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 19:28:09</sys_created_on>
+<sys_id>db7d4dacdbe10010b914e9c9489619a4</sys_id>
+</sys_attachment_doc>
+<sys_attachment_doc action="INSERT_OR_UPDATE">
+<data>lZHNbsMgEIRfBfnuYhP/pNKGKKrUQw++pD3k6MTrGNWABTht3r4YOW0TNYeemJmFTyMW1p+yJyc0Vmi1itKHJCKoDroR6riK3l6f42W05jBaNBxaYayraon8RXcK6I+Hvp7VVgrXAf32IOymFyfkzowI9OKgPiJnJdDphLppDFrLwTqD6DazZSlhqiHbEAK9HsJBuDOv8IPstHkHGqwH1A55tZtuTwoG7UX/pBvkaZKwNF74A+iv2He4IIdOK6xGuff/wcGdB+Sdlr52kKDCxNdiJM/zOGWLDOgceuTV4z9Qum3F4RZWZEWAZXlR/gcm9V70tzDfiHhQXC4fk7swO2i/TurzsNUvke3DPAICAAA=</data>
+<length>364</length>
+<position>1</position>
+<sys_attachment display_value="TestXMLDoc -2.xml" sys_id="9b7d4dacdbe10010b914e9c9489619a4">9b7d4dacdbe10010b914e9c9489619a4</sys_attachment>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 19:28:09</sys_created_on>
+<sys_id>5f7d4dacdbe10010b914e9c9489619a4</sys_id>
+</sys_attachment_doc>
+<sys_attachment action="INSERT_OR_UPDATE">
+<average_image_color/>
+<chunk_size_bytes>734003</chunk_size_bytes>
+<compressed>true</compressed>
+<content_type>text/xml</content_type>
+<encryption_context display_value=""/>
+<file_name>TestXMLDoc -3.xml</file_name>
+<image_height/>
+<image_width/>
+<size_bytes>514</size_bytes>
+<size_compressed>282</size_compressed>
+<state>available</state>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 19:33:05</sys_created_on>
+<sys_id>eb9e01a8dbe10010b914e9c9489619d2</sys_id>
+<sys_mod_count>1</sys_mod_count>
+<sys_updated_by>system</sys_updated_by>
+<sys_updated_on>2019-12-02 19:33:06</sys_updated_on>
+<table_name>sys_script_fix</table_name>
+<table_sys_id>b9c9dea6db110010b914e9c9489619c4</table_sys_id>
+</sys_attachment>
+<sys_attachment_doc action="INSERT_OR_UPDATE">
+<data>H4sIAAAAAAAAAA==</data>
+<length>16</length>
+<position>0</position>
+<sys_attachment display_value="TestXMLDoc -3.xml" sys_id="eb9e01a8dbe10010b914e9c9489619d2">eb9e01a8dbe10010b914e9c9489619d2</sys_attachment>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 19:33:05</sys_created_on>
+<sys_id>2f9e01a8dbe10010b914e9c9489619d2</sys_id>
+</sys_attachment_doc>
+<sys_attachment_doc action="INSERT_OR_UPDATE">
+<data>lZHNbsMgEIRfBfnuYhP/pNKGKKrUQw++pD3k6MTrGNWABTht3r4YOW0TNYeemJmFTyMW1p+yJyc0Vmi1itKHJCKoDroR6riK3l6f42W05jBaNBxaYayraon8RXcK6I+Hvp7VVgrXAf32IOymFyfkzowI9OKgPiJnJdDphLppDFrLwTqD6DazZSlhqiHbEAK9HsJBuDOv8IPstHkHGqwH1A55tZtuTwoG7UX/pBvkaZKwNF74A+iv2He4IIdOK6xGuff/wcGdB+Sdlr52kKDCxNdiJM/zOGWLDOgceuTV4z9Qum3F4RZWZEWAZXlR/gcm9V70tzDfiHhQXC4fk7swO2i/TurzsNUvke3DPAICAAA=</data>
+<length>364</length>
+<position>1</position>
+<sys_attachment display_value="TestXMLDoc -3.xml" sys_id="eb9e01a8dbe10010b914e9c9489619d2">eb9e01a8dbe10010b914e9c9489619d2</sys_attachment>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 19:33:05</sys_created_on>
+<sys_id>af9e01a8dbe10010b914e9c9489619d2</sys_id>
+</sys_attachment_doc>
+<sys_attachment action="INSERT_OR_UPDATE">
+<average_image_color/>
+<chunk_size_bytes>734003</chunk_size_bytes>
+<compressed>true</compressed>
+<content_type>text/xml</content_type>
+<encryption_context display_value=""/>
+<file_name>TestXMLDoc -4.xml</file_name>
+<image_height/>
+<image_width/>
+<size_bytes>514</size_bytes>
+<size_compressed>282</size_compressed>
+<state>available</state>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 19:47:02</sys_created_on>
+<sys_id>f3c115e8dbe10010b914e9c94896198d</sys_id>
+<sys_mod_count>1</sys_mod_count>
+<sys_updated_by>system</sys_updated_by>
+<sys_updated_on>2019-12-02 19:47:11</sys_updated_on>
+<table_name>sys_script_fix</table_name>
+<table_sys_id>b9c9dea6db110010b914e9c9489619c4</table_sys_id>
+</sys_attachment>
+<sys_attachment_doc action="INSERT_OR_UPDATE">
+<data>H4sIAAAAAAAAAA==</data>
+<length>16</length>
+<position>0</position>
+<sys_attachment display_value="TestXMLDoc -4.xml" sys_id="f3c115e8dbe10010b914e9c94896198d">f3c115e8dbe10010b914e9c94896198d</sys_attachment>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 19:47:02</sys_created_on>
+<sys_id>37c115e8dbe10010b914e9c94896198d</sys_id>
+</sys_attachment_doc>
+<sys_attachment_doc action="INSERT_OR_UPDATE">
+<data>lZHNbsMgEIRfBfnuYhP/pNKGKKrUQw++pD3k6MTrGNWABTht3r4YOW0TNYeemJmFTyMW1p+yJyc0Vmi1itKHJCKoDroR6riK3l6f42W05jBaNBxaYayraon8RXcK6I+Hvp7VVgrXAf32IOymFyfkzowI9OKgPiJnJdDphLppDFrLwTqD6DazZSlhqiHbEAK9HsJBuDOv8IPstHkHGqwH1A55tZtuTwoG7UX/pBvkaZKwNF74A+iv2He4IIdOK6xGuff/wcGdB+Sdlr52kKDCxNdiJM/zOGWLDOgceuTV4z9Qum3F4RZWZEWAZXlR/gcm9V70tzDfiHhQXC4fk7swO2i/TurzsNUvke3DPAICAAA=</data>
+<length>364</length>
+<position>1</position>
+<sys_attachment display_value="TestXMLDoc -4.xml" sys_id="f3c115e8dbe10010b914e9c94896198d">f3c115e8dbe10010b914e9c94896198d</sys_attachment>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 19:47:02</sys_created_on>
+<sys_id>b7c115e8dbe10010b914e9c94896198d</sys_id>
+</sys_attachment_doc>
+<sys_attachment action="INSERT_OR_UPDATE">
+<average_image_color/>
+<chunk_size_bytes>734003</chunk_size_bytes>
+<compressed>true</compressed>
+<content_type>text/xml</content_type>
+<encryption_context display_value=""/>
+<file_name>TestXMLDoc -5.xml</file_name>
+<image_height/>
+<image_width/>
+<size_bytes>514</size_bytes>
+<size_compressed>282</size_compressed>
+<state>available</state>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 20:05:06</sys_created_on>
+<sys_id>2cf559e4db250010b914e9c948961945</sys_id>
+<sys_mod_count>1</sys_mod_count>
+<sys_updated_by>system</sys_updated_by>
+<sys_updated_on>2019-12-02 20:05:13</sys_updated_on>
+<table_name>sys_script_fix</table_name>
+<table_sys_id>b9c9dea6db110010b914e9c9489619c4</table_sys_id>
+</sys_attachment>
+<sys_attachment_doc action="INSERT_OR_UPDATE">
+<data>H4sIAAAAAAAAAA==</data>
+<length>16</length>
+<position>0</position>
+<sys_attachment display_value="TestXMLDoc -5.xml" sys_id="2cf559e4db250010b914e9c948961945">2cf559e4db250010b914e9c948961945</sys_attachment>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 20:05:06</sys_created_on>
+<sys_id>6cf559e4db250010b914e9c948961945</sys_id>
+</sys_attachment_doc>
+<sys_attachment_doc action="INSERT_OR_UPDATE">
+<data>lZHNbsMgEIRfBfnuYhP/pNKGKKrUQw++pD3k6MTrGNWABTht3r4YOW0TNYeemJmFTyMW1p+yJyc0Vmi1itKHJCKoDroR6riK3l6f42W05jBaNBxaYayraon8RXcK6I+Hvp7VVgrXAf32IOymFyfkzowI9OKgPiJnJdDphLppDFrLwTqD6DazZSlhqiHbEAK9HsJBuDOv8IPstHkHGqwH1A55tZtuTwoG7UX/pBvkaZKwNF74A+iv2He4IIdOK6xGuff/wcGdB+Sdlr52kKDCxNdiJM/zOGWLDOgceuTV4z9Qum3F4RZWZEWAZXlR/gcm9V70tzDfiHhQXC4fk7swO2i/TurzsNUvke3DPAICAAA=</data>
+<length>364</length>
+<position>1</position>
+<sys_attachment display_value="TestXMLDoc -5.xml" sys_id="2cf559e4db250010b914e9c948961945">2cf559e4db250010b914e9c948961945</sys_attachment>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2019-12-02 20:05:06</sys_created_on>
+<sys_id>ecf559e4db250010b914e9c948961945</sys_id>
+</sys_attachment_doc>
+</unload>
