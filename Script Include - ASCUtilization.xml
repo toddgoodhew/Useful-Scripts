@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2019-12-12 18:52:40">
+<sys_script_include action="INSERT_OR_UPDATE">
+<access>package_private</access>
+<active>true</active>
+<api_name>x_asc_application.ascUtilizationData</api_name>
+<caller_access/>
+<client_callable>false</client_callable>
+<description>Set of help functions that will be used to calculate  aggregate utilization data for display within various widgets. </description>
+<name>ascUtilizationData</name>
+<script><![CDATA[var ascUtilizationData = Class.create();
+ascUtilizationData.prototype = {
+    initialize: function() {
+    },
+
+	
+	/* *************************************************************************************************
+	Description: For use with trend indicators. Gets time series values and timestamps for one or moe CIs.  
+				 All the CIs, must be from the same table.
+		
+	Usage:  This function takes the following parameters:
+				table = id of the table for the CI.  This is due to not all metrics are on a single table
+				metric = name of the specific metric to measure.  Metric must be associated with the table already.
+				query = the specific query used to get the CI record(s) for the metric data. This is in the form of
+						an encoded query string.
+		
+	Returns: This function returns an object with the data values and related timestamps for the current
+	time series and the previous time series (used for utilization trending).
+	*************************************************************************************************	*/
+	getTrendInfo : function (table,metric,query){
+		// set default duration - in minutes
+		var duration = gs.getProperty('x_asc_application.metrics.utilization_trend_duration');
+//		var duration = 60;  // in minutes
+		
+		// set offset due to data being 15 minutes delayed real time.  this ensures we have a a full hour of data.
+		var offset = 15 * 60; // in seconds
+
+		// Set up Date/Time variables.  Need it in ISO format for the REST call
+		// current period
+		var currStart = new GlideDateTime();
+		currStart.addSeconds((-1 * 60 * duration) - offset);
+		var currEnd = new GlideDateTime();
+		currEnd.addSeconds((-1 * offset));
+		var currStartISO = currStart.toString().replace(' ','T');
+		var currEndISO = currEnd.toString().replace(' ','T');
+		
+		// previous period
+		var prevStart = new GlideDateTime();
+		prevStart.addSeconds(((-1 * 60 * duration) * 2) - offset);
+		var prevStartISO = prevStart.toString().replace(' ','T');
+		var prevEndISO = currStartISO;
+
+		var currData = this._fetchData(table,metric,query,currStartISO,currEndISO);
+		var currValues = currData.values;
+
+		var prevData = this._fetchData(table,metric,query,prevStartISO,prevEndISO);
+		var prevValues = prevData.values;
+		
+		var util = this._calcAvg(currValues);
+		util = (util == 'N/A') ? util : Math.abs(Number(util).toFixed(0));
+
+		var utilPrev = this._calcAvg(prevValues);
+		utilPrev = (utilPrev == 'N/A') ? util : Math.abs(Number(utilPrev).toFixed(0));		
+
+		var change;
+		if (util - utilPrev == 0){ // do not allow divide into zero
+			change = 0;
+		} else if (utilPrev == 0) { // do not allow divide by zero
+			// do nothing
+		} else	{
+			change = Number((((util - utilPrev) / utilPrev) * 100));
+		}
+
+		change = ((change != 'NaN')) ? change : 'N/A';
+
+		var fontsAndColors = this._getFontsAndColors(util,change);
+
+		var answer = {
+			utilization : util,
+			util_change : Math.abs(change).toFixed(1),
+			utilizationColor : fontsAndColors.utilizationColor,
+			trendIndicator: fontsAndColors.trendIndicator,
+			trendColor : fontsAndColors.trendColor			
+		};
+
+		return answer;
+	},	
+	
+	
+	/* *************************************************************************************************
+	Description: For use with charts. Gets time series values and timestamps for one or moe CIs.  
+				 All the CIs, must be from the same table.
+		
+	Usage:  This function takes the following parameters:
+				table = id of the table for the CI.  This is due to not all metrics are on a single table
+				metric = name of the specific metric to measure.  Metric must be associated with the table already.
+				query = the specific query used to get the CI record(s) for the metric data. This is in the form of
+						an encoded query string.
+		
+	Returns: This function returns an object with the data values and related timestamps for the current
+	time series and the previous time series (used for utilization trending).
+	*************************************************************************************************	*/
+	getChartData : function (table,metric,query,duration){
+	
+		// if a duration was not passed, then set a default
+		duration = duration ? duration : 60;
+
+		// Set up Date/Time variables.  Need it in ISO format for the REST call
+		// current start and end period
+		var start = new GlideDateTime();
+		start.addSeconds(-1 * 60 * duration);
+		var end = new GlideDateTime();
+		// create ISO based date/time strings
+		var currStartISO = start.toString().replace(' ','T');
+		var currEndISO = end.toString().replace(' ','T');
+
+		var answer = [];
+		
+		var currData = this._fetchData(table,metric,query,currStartISO,currEndISO);
+
+		var data = [];
+		
+		for (var i=0; i< currData.values.length; i++) {
+			var dataPoint = [];
+			// try to parse the data string into a date type. if we get 'NaN' then, update the string with microseconds so it works correctly
+			if (isNaN(Date.parse(currData.categories[i]))){
+				dataPoint.push(Date.parse(currData.categories[i].replace('Z','.000Z')));
+			} else {
+				dataPoint.push(Date.parse(currData.categories[i]));
+			}
+			dataPoint.push(currData.values[i]);
+			data.push(dataPoint);
+		}
+
+		answer.push({
+			"name" : metric,
+			"data" : data
+		});
+
+		return answer;
+	},
+
+
+	/* *************************************************************************************************
+	Description: Helper function for internal use by this include script.  It does the actual metric
+				 data collection.
+		
+	Usage:  This function takes the following parameters:
+				table = id of the table for the CI.  This is due to not all metrics are on a single table
+				metric = name of the specific metric to measure. Example:  cpuutilzation
+				query = the specific query used to get the CI record(s) for the metric data. This is in the form of
+						an encoded query string.
+				startDate = the date and time for the start of the series to collect
+				endDate = the date and time for the end of the series to collect.
+		
+	Returns: This function returns a object containing data values and related time stamps.
+	*************************************************************************************************	*/	
+	_fetchData : function (table,metric,query,startDate,endDate){
+		var response, responseBody;
+		var values = [];
+		var categories = [];
+		
+		try { 
+			var instance = gs.getProperty('instance_name');
+			var r = new sn_ws.RESTMessageV2('x_asc_application.ASC Get Utilization Data', 'GET TRANSFORM');
+			r.setStringParameterNoEscape('instance', instance); 
+			r.setStringParameterNoEscape('table', table);
+			r.setStringParameterNoEscape('metric', metric);		
+			r.setStringParameterNoEscape('sysparm_query', query);
+			r.setStringParameterNoEscape('sysparm_start', startDate);
+			r.setStringParameterNoEscape('sysparm_end', endDate);
+			r.setStringParameterNoEscape('sysparm_transforms', 'avg');
+
+			response = r.execute();
+			responseBody = response.getBody();
+		}
+			catch(ex) {
+				var message = ex.message;
+				gs.error("Script Include: 'ascUtilizationData' - Error getting Utilization data via REST.  Message: " + message);
+		}
+
+		var dataParsed = JSON.parse(responseBody);
+
+		var info;
+		try{
+			for (info in dataParsed[0].values) {
+				if (isNaN(dataParsed[0].values[info].value)){
+					values.push(null);
+				} else {
+					values.push(dataParsed[0].values[info].value);
+				}
+				categories.push(dataParsed[0].values[info].timestamp);
+			}
+		} catch (msg){
+				// do nothing.  it means there was no data to process
+		}
+
+		var answer = {};
+		answer.values = values;
+		answer.categories = categories;
+
+		return answer;
+		
+	},
+	
+	
+	_calcAvg : function(result){
+		var series;
+		var sum = 0;
+		var counter = 0;		
+		var avg = 0;		
+		var utilization;
+		var avgUtil = 'N/A';
+
+		if (result != '') {
+			series = result;
+
+			for (i = 0; i < series.length; i++) {
+				if(!isNaN(series[i])){
+					sum += series[i];
+					counter ++;
+				}
+			}
+		  
+			if (sum != 0){
+				avg = sum/counter;
+			}
+			
+			avgUtil = Number(avg);
+		}
+
+		return avgUtil;
+		
+	},	
+	
+	_getFontsAndColors : function(utilTTL,change){
+		// get utilization trend direction
+		//var diff = utilTTL - utilPrevTTL;
+
+		var trendIndicator='';
+		var trendColor='';
+		var utilizationColor='';
+		
+		// set the trend indicator font and color
+		if (change < 0 ){
+			trendIndicator = 'fas fa-caret-down';
+			trendColor = 'red';
+		} else if (change > 0) {
+			trendIndicator = 'fas fa-caret-up';
+			trendColor = 'green';
+		} else if (change == 0){
+			trendIndicator = 'fas fa-arrows-alt-h';
+		}
+		
+		// set the utilization color
+		if (utilTTL <= 50){
+			utilizationColor = 'green';
+		} else if (utilTTL > 50 && utilTTL <= 75 ) {
+			utilizationColor = 'orange';
+		} else if (utilTTL > 75){
+			utilizationColor = 'red';
+		}
+		
+		answer = {
+			trendIndicator : trendIndicator,
+			trendColor : trendColor,
+			utilizationColor : utilizationColor
+		};
+		
+		return answer;
+		
+	},
+
+    type: 'ascUtilizationData'
+};]]></script>
+<sys_class_name>sys_script_include</sys_class_name>
+<sys_created_by>Todd.Goodhew</sys_created_by>
+<sys_created_on>2019-05-16 14:53:31</sys_created_on>
+<sys_id>86de82481365f700bfc0f6b2e144b0e1</sys_id>
+<sys_mod_count>341</sys_mod_count>
+<sys_name>ascUtilizationData</sys_name>
+<sys_package display_value="ASC Application" source="x_asc_application">b5a674f7db44ab007ce7bb01ef96199b</sys_package>
+<sys_policy>read</sys_policy>
+<sys_scope display_value="ASC Application">b5a674f7db44ab007ce7bb01ef96199b</sys_scope>
+<sys_update_name>sys_script_include_86de82481365f700bfc0f6b2e144b0e1</sys_update_name>
+<sys_updated_by>todd.goodhew</sys_updated_by>
+<sys_updated_on>2019-09-10 13:35:25</sys_updated_on>
+</sys_script_include>
+</unload>
