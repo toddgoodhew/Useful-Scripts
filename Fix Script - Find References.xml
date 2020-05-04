@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2020-05-04 14:30:53">
+<sys_script_fix action="INSERT_OR_UPDATE">
+<active>true</active>
+<before>false</before>
+<description>Given a list of records, it will search all of ServiceNow looking for references to each record in the list.</description>
+<flush_cache>false</flush_cache>
+<name>ToddTest - Find References</name>
+<record_for_rollback>false</record_for_rollback>
+<run_once>true</run_once>
+<script><![CDATA[var fixScriptSysID = '2fb6889a1b14dc10b7daa93ee54bcbbc';  //sysID of THIS script
+
+var Headers = ["Name","SysID","Table","Column","Type","Count"];
+var fileName = 'references.csv';
+var csvData = '';
+
+//Add headers to data
+for (var i=0; i < Headers.length; i++){
+	csvData = csvData + '"' + Headers[i] + '"' + ',';
+}
+csvData = csvData + "\r\n";
+
+//var refTable = new TableUtils(current.getTableName()).getTables();
+	var refTable = new TableUtils('cmdb_ci_comm').getTables();
+    gs.include("j2js");
+    refTable = j2js(refTable).join();
+    //var refRecordID = current.sys_id;
+	var sourceGR = new GlideRecord('cmdb_ci_comm');
+	//sourceGR.addEncodedQuery('model_id.display_nameLIKECISCO SYSTEMS CP-8832 UC Phone');
+	//sourceGR.addEncodedQuery('model_id.display_nameLIKEcisco^nameLIKEm0002512^ORnameLIKEm0002514');
+	sourceGR.addEncodedQuery('model_id.display_nameLIKECISCO SYSTEMS UC Phone 8945');
+
+	sourceGR.query();
+gs.info('ToddTest - Find References: Rows to  process: ' + sourceGR.getRowCount());
+
+	while (sourceGR.next()){
+		
+	var refRecordID = sourceGR.sys_id;
+    //Query dictionary table for reference, document_id, and condition fields
+    var dict = new GlideRecord('sys_dictionary');
+    dict.addQuery('reference', 'IN', refTable).addOrCondition('internal_type', 'document_id').addOrCondition('internal_type', 'conditions');
+    //Do not query audit and log fields
+    dict.addQuery('name', 'DOES NOT CONTAIN', 'var__m_');
+    dict.addQuery('name', 'DOES NOT CONTAIN', 'ecc_');
+    dict.addQuery('name', 'DOES NOT CONTAIN', 'ha_');
+    dict.addQuery('name', 'DOES NOT CONTAIN', 'syslog');
+    dict.addQuery('name', 'DOES NOT CONTAIN', 'sys_history');
+    dict.addQuery('name', 'DOES NOT CONTAIN', '_log');
+    dict.addQuery('name', 'DOES NOT CONTAIN', 'text_search');
+    dict.addQuery('name', 'DOES NOT CONTAIN', 'ts_');
+    dict.addQuery('name', 'DOES NOT CONTAIN', 'sys_watermark');
+    dict.addQuery('name', 'DOES NOT CONTAIN', 'sys_audit');
+	dict.addQuery('name', 'DOES NOT CONTAIN', 'sn_templated_snip_note_template');
+    dict.orderBy('name');
+    dict.orderBy('element');
+    dict.query();
+
+    while (dict.next()) {
+        var tblName = dict.name.toString();
+        // Skip tables used for Table Rotation
+        var gr = new GlideRecord("sys_table_rotation_schedule");
+        gr.addQuery("name.name", '!=', tblName);
+        gr.addQuery("table_name", tblName);
+        gr.query();
+        if (!gr.hasNext()) {
+            var recMessage = ' records found';
+            var filterOperator = '=';
+            var refType = dict.internal_type;
+            if (refType == 'glide_list' || refType == 'conditions') {
+                filterOperator = 'LIKE';
+            }
+
+            //Query each table for matching records
+            var rec = new GlideRecord(tblName);
+            if (refType == 'glide_list' || refType == 'conditions') {
+                rec.addQuery(dict.element, 'CONTAINS', refRecordID);
+            } else {
+                rec.addQuery(dict.element, refRecordID);
+            }
+            rec.query();
+            if (rec.getRowCount() == 1) {
+                recMessage = ' record found';
+            }
+            if (rec.getRowCount() > 0) {
+                //Display table/column info
+               csvData = csvData  + '"' + sourceGR.name + '","' + sourceGR.sys_id + '","' + tblName + '","' + dict.element + '","' + dict.internal_type + '","' + rec.getRowCount() + '"' + "\r\n";
+            }
+        }
+    }
+
+/*    //Query for workflow variable values
+    tblName = 'sys_variable_value';
+    var vVal = new GlideRecord(tblName);
+    vVal.addQuery('value', 'CONTAINS', refRecordID);
+    vVal.query();
+    if (vVal.getRowCount() == 1) {
+        recMessage = ' record found';
+    }
+
+    if (vVal.getRowCount() > 0) {
+        //Display table/column info
+        msg = msg + '| ' +  'Table: ' + tblName + ' - Column [Column type]: ' + 'value' + '[' + 'string' + ']' + ' --- ' +  + vVal.getRowCount() + recMessage;
+    }  */
+		
+}
+
+var grRec = new GlideRecord('sys_script_fix');
+grRec.get(fixScriptSysID);
+var grAttachment = new GlideSysAttachment();
+grAttachment.write(grRec,fileName,'application/csv',csvData);
+
+]]></script>
+<sys_class_name>sys_script_fix</sys_class_name>
+<sys_created_by>goodhewt</sys_created_by>
+<sys_created_on>2020-04-22 17:47:33</sys_created_on>
+<sys_customer_update>false</sys_customer_update>
+<sys_id>2fb6889a1b14dc10b7daa93ee54bcbbc</sys_id>
+<sys_mod_count>60</sys_mod_count>
+<sys_name>ToddTest - Find References</sys_name>
+<sys_package display_value="Global" source="global">global</sys_package>
+<sys_policy/>
+<sys_replace_on_upgrade>false</sys_replace_on_upgrade>
+<sys_scope display_value="Global">global</sys_scope>
+<sys_update_name>sys_script_fix_2fb6889a1b14dc10b7daa93ee54bcbbc</sys_update_name>
+<sys_updated_by>goodhewt</sys_updated_by>
+<sys_updated_on>2020-04-27 13:59:12</sys_updated_on>
+<unloadable>false</unloadable>
+</sys_script_fix>
+<sys_attachment action="INSERT_OR_UPDATE">
+<average_image_color/>
+<chunk_size_bytes>700000</chunk_size_bytes>
+<compressed>true</compressed>
+<content_type>application/csv</content_type>
+<file_name>references.csv</file_name>
+<hash>4e4bc7bf4def37464409a065040ffa9464e5d094aa5ad508a408194a382f477b</hash>
+<image_height/>
+<image_width/>
+<size_bytes>6980</size_bytes>
+<size_compressed>656</size_compressed>
+<state>available</state>
+<sys_created_by>goodhewt</sys_created_by>
+<sys_created_on>2020-04-27 13:59:12</sys_created_on>
+<sys_id>46e3c9b71b9cd090b7daa93ee54bcb76</sys_id>
+<sys_mod_count>1</sys_mod_count>
+<sys_updated_by>system</sys_updated_by>
+<sys_updated_on>2020-04-27 13:59:12</sys_updated_on>
+<table_name>sys_script_fix</table_name>
+<table_sys_id>2fb6889a1b14dc10b7daa93ee54bcbbc</table_sys_id>
+</sys_attachment>
+<sys_attachment_doc action="INSERT_OR_UPDATE">
+<data>H4sIAAAAAAAAAA==</data>
+<length>16</length>
+<position>0</position>
+<sys_attachment display_value="references.csv" sys_id="46e3c9b71b9cd090b7daa93ee54bcb76">46e3c9b71b9cd090b7daa93ee54bcb76</sys_attachment>
+<sys_created_by>goodhewt</sys_created_by>
+<sys_created_on>2020-04-27 13:59:12</sys_created_on>
+<sys_id>86e3c9b71b9cd090b7daa93ee54bcb76</sys_id>
+</sys_attachment_doc>
+<sys_attachment_doc action="INSERT_OR_UPDATE">
+<data>rVi7jhsxDOwD5B8WW18ASatn7TRX5AFcUhtaicIZsdeJ91z477NGUgRIdARDNjbWsD0zIjkkNX7MJxgfxqfb+vh+e/+S5+P9eXc+Xk/L/YPb91/P1+VlfHj7ZvyglPExqeHdsHt82n0aYrJu+Loc2gHq8Pn5vMCw/UCZFqqeim9glFGqqDrPOeQ4TwBWpe0r+Xja53WF7X/HctheLtDgAku5A+pRFGu9rfvL+Xicc/m2X+HH9TdMPZfrCZaX/aH+9WT+oKARClpnW9Mc/01h0hS5AlhcuRGjkN2ka+hQaBNFrgAWU24ICAXjS91OvJNgGQhyJbCYcuOEUUg66dqrJ50JciWwuHItQmFqEF3qUWiFIlcAi1u7CaFgUzOuW0+kZJbA4tYu5pa2zeBc65x4aZTaFcDiysXqyQUPqfbsw1P6rgQWV67BKNQEyfUoNIpVSWBxrQqrJ69M1LV16ik6ilUJYHGtCnNLP2urXW/SKZ5iVQJY3GRGKRQLWvfsw1OGSAksbnSxSSdMcXK6d+JBUaIrgMWtXcw+QrQpdVt/rpTaFcDiynUYhVpemXSUpcgVwOImM9YLo7E2de2jkhZAASxudLGlbKMQ+yt3mCnRFcDiysXsI7YQk+tRiIEiVwCL24iwekpGg+sOdoUSXQksbu16jIItrzSHGim1K4DFTWaMQi45pm49OdIQKYDFlYvdDtboaq1BYkWQwOImM9b6aw5b7+8lWCIlswAW16qw5nCfZlL3xAvpak4AixtdzC2htCn1L0NJG5EAFje62A4KEOrmlr05lrQRCWBxrQq7P2rgk+tehhrSzCyAxY0u1hxag1euuitpzBDA+l+5PwEIqkNsRBsAAA==</data>
+<length>864</length>
+<position>1</position>
+<sys_attachment display_value="references.csv" sys_id="46e3c9b71b9cd090b7daa93ee54bcb76">46e3c9b71b9cd090b7daa93ee54bcb76</sys_attachment>
+<sys_created_by>goodhewt</sys_created_by>
+<sys_created_on>2020-04-27 13:59:12</sys_created_on>
+<sys_id>0ae3c9b71b9cd090b7daa93ee54bcb76</sys_id>
+</sys_attachment_doc>
+</unload>
