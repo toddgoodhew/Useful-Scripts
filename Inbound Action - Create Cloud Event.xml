@@ -1,4 +1,4 @@
----------  Instructions  ---------
+---------  Instructions  ------------------------------------
 1.  Import XML
 2.  Create subscription
                A. Set the field Protocol to "Email-JSON"
@@ -15,7 +15,7 @@
                3. Check the Cloud Events [sn_cmp_cloud_event] table to verify the event was created.
 
 
---------- XML ---------
+--------- XML ---------------------------------------------
 
 <?xml version="1.0" encoding="UTF-8"?>
 <unload unload_date="2020-05-11 16:12:22">
