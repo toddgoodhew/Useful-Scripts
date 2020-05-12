@@ -1,3 +1,22 @@
+---------  Instructions  ---------
+1.  Import XML
+2.  Create subscription
+               A. Set the field Protocol to "Email-JSON"
+               B. Endpoint is the email address of the instance.
+3.  Monitor the mailbox Inbound for the subscription confirmation.
+    A.  Need to manually confirm the subscription.
+                              i.  Click on the Related Link "Preview HTML Body".  The data is presented in JSON format.
+                              ii. Find the Key "SubscribeURL" and copy it.  It may wrap to additional lines.
+                              iii. Paste the URL into the browser to confirm the subscription.  When doing this, the browser page will display the message "This XML file
+                                   does not appear to have any style information...".  Ignore this.  Verify in AWS the subscription is confirmed.
+4. Testing
+               1. Start or stop and EC2 instance.
+               2. Verify the email arives in "Inbox".
+               3. Check the Cloud Events [sn_cmp_cloud_event] table to verify the event was created.
+
+
+--------- XML ---------
+
 <?xml version="1.0" encoding="UTF-8"?>
 <unload unload_date="2020-05-11 16:12:22">
 <sysevent_in_email_action action="INSERT_OR_UPDATE">
