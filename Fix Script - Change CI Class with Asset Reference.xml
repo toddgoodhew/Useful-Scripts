@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2020-05-12 12:24:18">
+<sys_script_fix action="INSERT_OR_UPDATE">
+<active>true</active>
+<before>false</before>
+<description>This script will change the class of IP Phones, conference phones, voice gateways, and telepresence devices.  It will update their model category for each model to the  model category for the new CI class (removing the old model category).</description>
+<flush_cache>false</flush_cache>
+<name>Change CI Class for IP Phones</name>
+<record_for_rollback>false</record_for_rollback>
+<run_once>true</run_once>
+<script><![CDATA[// get the list of models we need to process
+var modelsToProcess = buildModelList();
+
+// process the array of models
+for (var i=0; i< modelsToProcess.length; i++) {
+	var ciGR = new GlideRecord('cmdb_ci');
+	ciGR.addEncodedQuery('model_id.display_name=' + modelsToProcess[i].model);
+	ciGR.query();
+
+	//remove ALL the model categories associated to  this model
+	var modelGR = new GlideRecord ('cmdb_model');
+	modelGR.get('display_name',modelsToProcess[i].model);
+	modelGR.cmdb_model_category = '';
+	modelGR.update();
+	
+	//get the sys_id of the new model category so we can update the asset record later on
+	modelCatGR = new GlideRecord ('cmdb_model_category');
+	modelCatGR.get('cmdb_ci_class',modelsToProcess[i].ci_class);
+	modelCatSysID = modelCatGR.sys_id;
+	
+	// change the ci class of the CI.  This will also auto add the model to the model category associated to the ci class
+	// we have to manually set the new model category on the asset record though
+	while (ciGR.next()){
+		ciGR.sys_class_name = modelsToProcess[i].ci_class;
+		ciGR.update();
+		
+		//get the CI's related asset record so we can update it's model category
+		var assetGR = new GlideRecord ('alm_asset');
+		assetGR.get(ciGR.asset);
+		assetGR.setValue('model_category',modelCatSysID);
+		assetGR.update();
+	}
+	
+}
+
+// build the array of JSON objects of the models we need to process and their attributes
+function buildModelList() {
+	var list = [
+		{"model":"Cisco 7960","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"Cisco 7970G","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS 30PCP-8945-K9","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS 525","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS 6945","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS 7965","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS 7965G","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS 9971","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS CISCO Unified Phone 8831","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS CP-7937G","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS CP-8832 UC Phone","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS CP-8845 UC Phone","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS CP-8865 UC Phone","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS CP-8945","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS CP-9951-C-CAM-K9","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS IP Conference Phone 8831","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS UC Phone 7841","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS UC Phone 8945","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS UC Phone 9951","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS Unified Phone 8831","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS Unified Phone 8945","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS Unified Phone 9951","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS, INC. 30PCP-8945-K9","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS, INC. EM-8841 VOIP Phone","ci_class":"cmdb_ci_ip_phone"},
+		{"model":"CISCO SYSTEMS, INC. EM-8851 VOIP Phone","ci_class":"cmdb_ci_ip_phone"},
+		
+		{"model":"CISCO SYSTEMS VG202XM","ci_class":"u_cmdb_ci_voice_gateway"},
+		{"model":"CISCO SYSTEMS VG202XM Analog Voice Gateways","ci_class":"u_cmdb_ci_voice_gateway"},
+		{"model":"CISCO SYSTEMS VG204","ci_class":"u_cmdb_ci_voice_gateway"},
+		
+		{"model":"CISCO SYSTEMS 3000","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS 4505","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS CP-DX80-K9","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS CTSEX60K9","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS CTSEX90K9","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS DX70","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS DX80","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS EX60","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS EX90","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS MX200","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS MX700","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS SX10","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS SX20","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS SX80","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS SX80-IPST60-K9","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS TOUCH 10","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS TTC5-09","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS TTC60-21 TTC5-09","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS TTC6-13","ci_class":"u_cmdb_ci_telepresence"},
+		{"model":"CISCO SYSTEMS TTC7-21","ci_class":"u_cmdb_ci_telepresence"}
+		
+	];
+	
+	return list;
+}
+]]></script>
+<sys_class_name>sys_script_fix</sys_class_name>
+<sys_created_by>goodhewt</sys_created_by>
+<sys_created_on>2020-04-23 14:51:05</sys_created_on>
+<sys_customer_update>false</sys_customer_update>
+<sys_id>23d86cee1b949050b7daa93ee54bcbb5</sys_id>
+<sys_mod_count>68</sys_mod_count>
+<sys_name>Change CI Class for IP Phones</sys_name>
+<sys_package display_value="Global" source="global">global</sys_package>
+<sys_policy/>
+<sys_replace_on_upgrade>false</sys_replace_on_upgrade>
+<sys_scope display_value="Global">global</sys_scope>
+<sys_update_name>sys_script_fix_23d86cee1b949050b7daa93ee54bcbb5</sys_update_name>
+<sys_updated_by>goodhewt</sys_updated_by>
+<sys_updated_on>2020-05-11 19:19:46</sys_updated_on>
+<unloadable>false</unloadable>
+</sys_script_fix>
+</unload>
