@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<unload unload_date="2020-01-23 20:07:43">
+<unload unload_date="2020-05-11 16:12:22">
 <sysevent_in_email_action action="INSERT_OR_UPDATE">
 <action>record_action</action>
 <active>true</active>
@@ -7,25 +7,25 @@
 <condition_script/>
 <description/>
 <event_name>email.read</event_name>
-<filter_condition table="sys_email"/>
+<filter_condition table="sys_email">user=no-reply@sns.amazonaws.com^subjectSTARTSWITH[AWS Config:^EQ<item goto="false" or="false" field="user" endquery="false" value="no-reply@sns.amazonaws.com" operator="=" newquery="false"/>
+<item goto="false" or="false" field="subject" endquery="false" value="[AWS Config:" operator="STARTSWITH" newquery="false"/>
+<item goto="false" or="false" field="" endquery="true" value="" operator="=" newquery="false"/>
+</filter_condition>
 <from display_value=""/>
 <name>Create Cloud Event</name>
 <order>90</order>
 <reply_email/>
 <required_roles/>
-<script><![CDATA[//(function runAction(/*GlideRecord*/ current, /*GlideRecord*/ event, /*EmailWrapper*/ email, /*ScopedEmailLogger*/ logger, /*EmailClassifier*/ classifier) {
-
-	// Implement email action here
-
-//})(current, event, email, logger, classifier);
+<script><![CDATA[// Used with Cloud Management to ingest CI state changes from AWS via an SNS message using Email-JSON protocol.
+// This is in place since the AWS IP addresses where not added to IP Address Access Control, thus the standard
+// REST message cannot be used.
 
 var body = email.body_text;
-var bodyFixed = body.replace(/(\n *)/gm,'');
+//remove newline characters from the body so payload will be correctly formatted.
+var bodyFixed = body.replace(/(\n *)/gm,'');  
 current.payload = bodyFixed;
-
 current.headers = global.JSON.stringify({"x-amz-sns-message-type": "Notification",
 					'header': email.headers});
-
 current.insert();
 ]]></script>
 <stop_processing>true</stop_processing>
@@ -35,7 +35,7 @@ current.insert();
 <sys_domain>global</sys_domain>
 <sys_domain_path>/</sys_domain_path>
 <sys_id>279d42d3db128410b914e9c9489619db</sys_id>
-<sys_mod_count>79</sys_mod_count>
+<sys_mod_count>86</sys_mod_count>
 <sys_name>Create Cloud Event</sys_name>
 <sys_overrides display_value=""/>
 <sys_package display_value="Global" source="global">global</sys_package>
@@ -43,7 +43,7 @@ current.insert();
 <sys_scope display_value="Global">global</sys_scope>
 <sys_update_name>sysevent_in_email_action_279d42d3db128410b914e9c9489619db</sys_update_name>
 <sys_updated_by>tgoodhew</sys_updated_by>
-<sys_updated_on>2020-01-23 17:13:23</sys_updated_on>
+<sys_updated_on>2020-05-11 16:12:01</sys_updated_on>
 <table>sn_cmp_cloud_event</table>
 <template/>
 <type>new</type>
