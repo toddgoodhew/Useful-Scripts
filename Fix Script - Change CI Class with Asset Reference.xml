@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<unload unload_date="2020-05-12 12:24:18">
+<unload unload_date="2020-05-27 17:51:53">
 <sys_script_fix action="INSERT_OR_UPDATE">
 <active>true</active>
 <before>false</before>
@@ -17,11 +17,14 @@ for (var i=0; i< modelsToProcess.length; i++) {
 	ciGR.addEncodedQuery('model_id.display_name=' + modelsToProcess[i].model);
 	ciGR.query();
 
-	//remove ALL the model categories associated to  this model
+	//remove ALL the model categories associated to this model
 	var modelGR = new GlideRecord ('cmdb_model');
-	modelGR.get('display_name',modelsToProcess[i].model);
-	modelGR.cmdb_model_category = '';
-	modelGR.update();
+	modelGR.addQuery('display_name',modelsToProcess[i].model);
+	modelGR.query();
+	if(modelGR.hasNext()){
+		modelGR.cmdb_model_category = '';
+		modelGR.updateMultiple();
+	}		
 	
 	//get the sys_id of the new model category so we can update the asset record later on
 	modelCatGR = new GlideRecord ('cmdb_model_category');
@@ -30,18 +33,38 @@ for (var i=0; i< modelsToProcess.length; i++) {
 	
 	// change the ci class of the CI.  This will also auto add the model to the model category associated to the ci class
 	// we have to manually set the new model category on the asset record though
+	// we have to manually copy the phone number over since it is a custom field on the IP Phone table.
 	while (ciGR.next()){
-		ciGR.sys_class_name = modelsToProcess[i].ci_class;
-		ciGR.update();
+		var ciClass = ciGR.sys_class_name;
+		var ciClassGR = new GlideRecord(ciClass);
+		ciClassGR.get(ciGR.sys_id);
+		
+		if (modelsToProcess[i].ci_class == 'cmdb_ci_ip_phone'){
+			var phone = ciClassGR.phone_number;
+		}
+
+		ciClassGR.sys_class_name = modelsToProcess[i].ci_class;
+		ciClassGR.update();
+		
+		if (modelsToProcess[i].ci_class == 'cmdb_ci_ip_phone'){
+			var tempGR = new GlideRecord('cmdb_ci_ip_phone');
+			if (tempGR.get(ciClassGR.sys_id)){
+				tempGR.setValue('u_phone_number',phone);
+				tempGR.update();
+			} else {
+				gs.info("Change CI Class for IP Phones: " + name + " - did not get record in ip phone table; class=" + ciClassGR + " sysID=" + ciGR.sys_id);
+			}
+		}
 		
 		//get the CI's related asset record so we can update it's model category
 		var assetGR = new GlideRecord ('alm_asset');
-		assetGR.get(ciGR.asset);
+		assetGR.get(ciClassGR.asset);
 		assetGR.setValue('model_category',modelCatSysID);
 		assetGR.update();
 	}
 	
 }
+
 
 // build the array of JSON objects of the models we need to process and their attributes
 function buildModelList() {
@@ -107,7 +130,7 @@ function buildModelList() {
 <sys_created_on>2020-04-23 14:51:05</sys_created_on>
 <sys_customer_update>false</sys_customer_update>
 <sys_id>23d86cee1b949050b7daa93ee54bcbb5</sys_id>
-<sys_mod_count>68</sys_mod_count>
+<sys_mod_count>99</sys_mod_count>
 <sys_name>Change CI Class for IP Phones</sys_name>
 <sys_package display_value="Global" source="global">global</sys_package>
 <sys_policy/>
@@ -115,7 +138,7 @@ function buildModelList() {
 <sys_scope display_value="Global">global</sys_scope>
 <sys_update_name>sys_script_fix_23d86cee1b949050b7daa93ee54bcbb5</sys_update_name>
 <sys_updated_by>goodhewt</sys_updated_by>
-<sys_updated_on>2020-05-11 19:19:46</sys_updated_on>
+<sys_updated_on>2020-05-27 17:48:35</sys_updated_on>
 <unloadable>false</unloadable>
 </sys_script_fix>
 </unload>
