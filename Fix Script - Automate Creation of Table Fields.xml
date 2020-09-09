@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2020-09-09 17:51:56">
+<sys_script_fix action="INSERT_OR_UPDATE">
+<active>true</active>
+<before>false</before>
+<description>Creates basic field records in a given table. </description>
+<flush_cache>false</flush_cache>
+<name>ToddTest: Create Fields</name>
+<record_for_rollback>false</record_for_rollback>
+<run_once>true</run_once>
+<script><![CDATA[// *** Table Names
+var incTable = 'incident';
+var userTable = 'sys_user'; // sys_user
+
+// *** column types
+var stringType = 'string';
+var dateTimeType = 'glide_date_time';
+var integerType = 'integer';
+var currencyType = 'currency';
+var trueFalseType = 'boolean';
+var listType = 'glide_list';
+var referenceType = 'reference';
+
+
+var tableInfo = getTableInfo();
+
+for (var i=0; i< tableInfo.length; i++) {
+	var gr = new GlideRecord ('sys_dictionary');
+	gr.newRecord();
+	gr.setValue('name',tableInfo[i].table);
+	gr.setValue('column_label',tableInfo[i].column_label);
+	gr.setValue('element',tableInfo[i].element);
+	gr.setValue('internal_type',tableInfo[i].internal_type);
+	if (tableInfo[i].max_length){
+		gr.setValue('max_length',tableInfo[i].max_length);
+	}
+	if (tableInfo[i].internal_type == referenceType){
+		gr.setValue('reference',tableInfo[i].reference);
+	}
+	var result = gr.insert();
+	if (result){
+		gs.info("ToddTest: field created - " + tableInfo[i].column_label + " - " + result);
+	} else {
+		gs.info("ToddTest: field FAILED - " + tableInfo[i].column_label);
+	}
+	
+}
+
+ function getTableInfo(){
+	var data = [
+// 	{
+// 		'column_label': '',
+// 		'element': '',
+// 		'internal_type' : ,
+// 		'max_length': 		
+// 	},
+	
+	{
+		'table' : incTable,
+		'column_label': 'Was the incident detected internally or externally and by whom?',
+		'element': 'u_was_the_incident_detected_internally_or_externally_and_by_whom',
+		'internal_type' : stringType,
+		'max_length': 1000
+	},
+	{
+		'table' : incTable,
+		'column_label': 'What is the date and time of detection of the incident?,',
+		'element': 'u_what_is_the_date_and_time_of_detection_of_the_incident',
+		'internal_type' : dateTimeType,
+	},
+	{
+		'table' : incTable,
+		'column_label': 'What was the number of merchants affected?',
+		'element': 'u_what_was_the_number_of_merchants_affected',
+		'internal_type' : integerType
+	},
+	{
+		'table' : incTable,
+		'column_label': 'Impact Value (In EUR)',
+		'element': 'u_impact_value_in_eur)',
+		'internal_type' : currencyType
+	},	
+	{
+		'table' : incTable,
+		'column_label': 'Has the service been down for longer than 2 hours?',
+		'element': 'has_the_service_been_down_for_longer_than_2_hours',
+		'internal_type' : trueFalseType
+	},	
+	{
+		'table' : incTable,
+		'column_label': 'Commercial Channels Affected',
+		'element': 'u_commercial_channels_affected',
+		'internal_type' : listType
+	},
+	{
+		'table' : incTable,
+		'column_label': 'List of users',
+		'element': 'u_list_of_users',
+		'internal_type' : referenceType,
+		'reference': userTable
+	}
+	
+	];
+
+	return data;
+
+ }
+]]></script>
+<sys_class_name>sys_script_fix</sys_class_name>
+<sys_created_by>tgoodhew</sys_created_by>
+<sys_created_on>2020-09-08 21:55:41</sys_created_on>
+<sys_id>51f5388f2f0710107de643e72799b620</sys_id>
+<sys_mod_count>38</sys_mod_count>
+<sys_name>ToddTest: Create Fields</sys_name>
+<sys_package display_value="Global" source="global">global</sys_package>
+<sys_policy/>
+<sys_scope display_value="Global">global</sys_scope>
+<sys_update_name>sys_script_fix_51f5388f2f0710107de643e72799b620</sys_update_name>
+<sys_updated_by>tgoodhew</sys_updated_by>
+<sys_updated_on>2020-09-09 13:58:18</sys_updated_on>
+<unloadable>false</unloadable>
+</sys_script_fix>
+</unload>
