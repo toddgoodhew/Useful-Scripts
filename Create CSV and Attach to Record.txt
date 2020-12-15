@@ -1,0 +1,44 @@
+// Set up the global CSV variables
+var date = GlideDateTime();  // used in the file name below in case the script is run more than once.
+var fileName = 'Notification_Usage_' + date + '.csv';
+var csvData = '';
+
+// Setup the Header
+var Headers = ['Notification Name','Notification SysID','Count'];
+
+for (var i = 0; i < Headers.length; i++){
+	csvData = csvData + '"' + Headers[i] + '"';
+	// only add the trailing comma if it is not the last header
+  if (i < Headers.length - 1){
+		csvData = csvData + ',';
+	}
+}
+csvData = csvData + "\r\n";
+
+// Query for the data
+var aggEmailLog = new GlideAggregate('sys_email_log');
+aggEmailLog.addEncodedQuery("sys_created_onONLast 30 days@javascript:gs.beginningOfLast30Days()@javascript:gs.endOfLast30Days()^notificationISNOTEMPTY");
+
+// Add aggregate  
+aggEmailLog.addAggregate('COUNT', 'notification');
+
+// Execute query 
+aggEmailLog.query();
+
+
+// Process returned records
+while (aggEmailLog.next()) {
+	// Write the data to the csvData variable
+	csvData = csvData + aggEmailLog.notification.name + "," + aggEmailLog.notification + "," + aggEmailLog.getAggregate('COUNT', 'notification');
+	csvData = csvData + "\r\n";
+}
+
+// Create the file and attached to this script.
+//  Be sure to change the sys ID below to match the script.
+var grRec = new GlideRecord('sys_script_fix');
+if (grRec.get('c76941e61bc564147cb1ed33b24bcbea')){
+	var grAttachment = new GlideSysAttachment();
+	grAttachment.write(grRec, fileName, 'application/csv',csvData);
+}
+
+gs.info("Fix Script is complete.  Please close this window and refresh the record to see the attachment");
