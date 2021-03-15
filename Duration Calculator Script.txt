@@ -1,0 +1,25 @@
+var grOutages = new GlideRecord("cmdb_ci_outage");
+grOutages.addQuery("cmdb_ci", 'IN', relatedCis);
+grOutages.addQuery("begin", ">=", gs.daysAgoEnd(90));
+grOutages.addQuery('type','NOT IN','planned_outage_no_service_imp');		
+var orQ = grOutages.addQuery("end", ">=", gs.endOfToday);
+orQ.addOrCondition('end', 'NULL');
+grOutages.query();
+
+var dur = 0; // holds our accumulated duration for all outages
+
+while (grOutages.next()) {
+	// Get the glideObject for Begin.  Object is need, not just the value.
+	var begin = grOutages.begin.getGlideObject();
+	// If we have an end date, then get its glideObject.  Otherwise, get today's date/time so we can do a run calc for the outage.
+	var end = grOutages.end ? grOutages.end.getGlideObject() : new GlideDateTime();
+
+	dur = dur + GlideDateTime.subtract(begin,end).getNumericValue();
+}
+
+var gdt = new GlideDateTime();
+gdt.setNumericValue(dur);
+var durObj = new GlideDuration();
+durObj.setValue(gdt.getValue());
+
+return durObj.getDisplayValue();
