@@ -1,4 +1,5 @@
 // Set up the global CSV variables
+var fixScriptSysID = '6deca1c1db513410c6f006d1ca961991';
 var date = GlideDateTime();  // used in the file name below in case the script is run more than once.
 var fileName = 'Notification_Usage_' + date + '.csv';
 var csvData = '';
@@ -36,7 +37,7 @@ while (aggEmailLog.next()) {
 // Create the file and attached to this script.
 //  Be sure to change the sys ID below to match the script.
 var grRec = new GlideRecord('sys_script_fix');
-if (grRec.get('c76941e61bc564147cb1ed33b24bcbea')){
+if (grRec.get(fixScriptSysID)){
 	var grAttachment = new GlideSysAttachment();
 	grAttachment.write(grRec, fileName, 'application/csv',csvData);
 }
