@@ -30,7 +30,7 @@ aggEmailLog.query();
 // Process returned records
 while (aggEmailLog.next()) {
 	// Write the data to the csvData variable
-	csvData = csvData + aggEmailLog.notification.name + "," + aggEmailLog.notification + "," + aggEmailLog.getAggregate('COUNT', 'notification');
+	csvData = csvData + '"' + aggEmailLog.notification.name + '"' + "," + '"' + aggEmailLog.notification + '"' + "," + '"' + aggEmailLog.getAggregate('COUNT', 'notification') + '"';
 	csvData = csvData + "\r\n";
 }
 
